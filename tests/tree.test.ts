@@ -97,6 +97,11 @@ suite.test('tree sanity check', () => {
 	// find by value
 	assert(t.findBy('D').key === d.key);
 	assert(t.findBy('H').key === h.key);
+
+	// sibling index check
+	assert(t.findBy('B').siblingIndex === 0);
+	assert(t.findBy('G').siblingIndex === 1);
+	assert(t.findBy('E').siblingIndex === 1);
 });
 
 suite.test('dump, restore', () => {
@@ -216,6 +221,51 @@ suite.test('copy', () => {
     G
         I
             H`);
+});
+
+suite.test('siblings', () => {
+	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
+
+	assert(c.nextSibling()?.value === 'E');
+	assert(g.previousSibling()?.value === 'B');
+
+	// move sibling index
+	const x = f.appendChild('X');
+	f.appendChild('Y');
+	f.appendChild('Z');
+	// clog('\n' + t.toString());
+
+	// move to start
+	g.moveSiblingIndex(0);
+	assert(g.siblingIndex === 0);
+
+	// move to end
+	g.moveSiblingIndex(999);
+	// @ts-ignore
+	assert(g.siblingIndex === 4);
+
+	// move two steps forward
+	g.moveSiblingIndex(-2);
+	assert(g.siblingIndex === 2);
+
+	// clog('\n' + t.toString());
+});
+
+suite.only('find lca', () => {
+	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
+	//            F
+	//        /     \
+	//      B         G
+	//    /   \         \
+	//  A       D        I
+	//        /   \        \
+	//      C       E       H
+	assert(t.findLCA(a.key, e.key) === b);
+	assert(t.findLCA(a.key, d.key) === b);
+	assert(t.findLCA(a.key, h.key) === f);
+	assert(t.findLCA(f.key, f.key) === f);
+	assert(t.findLCA('foo', f.key) === null);
+	assert(t.findLCA('foo', 'bar') === null);
 });
 
 export default suite;

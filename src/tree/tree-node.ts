@@ -77,8 +77,37 @@ export class TreeNode<T> {
 		return this._parent === null;
 	}
 
+	get siblings() {
+		return this._parent?.children || [];
+	}
+
+	get siblingIndex() {
+		if (this.siblings.length) {
+			return this.siblings.findIndex((n) => n.key === this._key);
+		}
+		return -1;
+	}
+
+	protected _assertSameTreeNode(node: TreeNode<T>) {
+		if (node instanceof TreeNode && node.root !== this.root) {
+			throw new Error(
+				`Cannot proceed with a node from a different tree. (Use node's value instead.)`
+			);
+		}
+	}
+
+	protected _assertNotContains(node: TreeNode<T>) {
+		if (node instanceof TreeNode && this.contains(node.key)) {
+			throw new Error(`Cannot proceed, already contains. (Use node's value instead.)`);
+		}
+	}
+
+	toJSON(): TreeNodeDTO<T> {
+		return { key: this._key, value: this.value, children: this._children };
+	}
+
 	deepClone() {
-		// quick-n-dirty brute force
+		// quick-n-dirty
 		const dto = JSON.parse(
 			JSON.stringify(this.toJSON(), (k, v) => {
 				// create new key
@@ -101,69 +130,47 @@ export class TreeNode<T> {
 		return clone;
 	}
 
-	toJSON(): TreeNodeDTO<T> {
-		return { key: this._key, value: this.value, children: this._children };
-	}
-
-	protected _assertSameTreeNode(node: TreeNode<T>) {
-		if (node instanceof TreeNode && node.root !== this.root) {
-			throw new Error(
-				`Cannot proceed with a node from a different tree. (Use node's value instead.)`
-			);
-		}
-	}
-
-	protected _assertNotContains(node: TreeNode<T>) {
-		if (node instanceof TreeNode && this.contains(node.key)) {
-			throw new Error(`Cannot proceed, already contains. (Use node's value instead.)`);
-		}
-	}
-
-	appendChild(valueOrNode: T | TreeNode<T>) {
+	appendChild(valueOrNode: T | TreeNode<T>, _sync = true) {
 		this._assertSameTreeNode(valueOrNode as any);
 		this._assertNotContains(valueOrNode as any);
 
 		const child =
 			valueOrNode instanceof TreeNode ? valueOrNode : new TreeNode(valueOrNode, this);
-
 		this._children.push(child);
 
-		this.__syncChildren();
+		// allow to skip sync via flag (optimizing for bulk and/or restore operations)
+		_sync && this.__syncChildren();
 
 		return child;
 	}
 
 	removeChild(key) {
 		const idx = this._children.findIndex((n) => n.key === key);
-		if (idx > -1) {
-			this._children.splice(idx, 1);
-			return this;
-		}
-		return false;
+		if (idx < 0) return false; // not found
+
+		this._children.splice(idx, 1);
+		return this;
 	}
 
 	replaceChild(key, valueOrNode: T | TreeNode<T>): TreeNode<T> | false {
 		this._assertSameTreeNode(valueOrNode as any);
+
 		const idx = this._children.findIndex((n) => n.key === key);
-		if (idx > -1) {
-			this._assertNotContains(valueOrNode as any);
-			const child =
-				valueOrNode instanceof TreeNode ? valueOrNode : new TreeNode(valueOrNode, this);
-			this._children[idx] = child;
-			this.__syncChildren();
-			return this._children[idx];
-		}
-		return false;
+		if (idx < 0) return false; // not found
+
+		this._assertNotContains(valueOrNode as any);
+		const child =
+			valueOrNode instanceof TreeNode ? valueOrNode : new TreeNode(valueOrNode, this);
+		this._children[idx] = child;
+		this.__syncChildren();
+		return this._children[idx];
 	}
 
 	resetChildren(values: (T | TreeNode<T>)[] = []) {
 		this._children = [];
-		(values || []).forEach((v) => this.appendChild(v));
+		(values || []).forEach((v) => this.appendChild(v, false));
+		this.__syncChildren();
 		return this;
-	}
-
-	get siblings() {
-		return this._parent?.children || [];
 	}
 
 	previousSibling() {
@@ -180,6 +187,28 @@ export class TreeNode<T> {
 			return this.siblings[selfIdx + 1] || null;
 		}
 		return null;
+	}
+
+	moveSiblingIndex(toIndex: number) {
+		const fromIndex = this.siblingIndex;
+
+		// nothing to move...
+		if (this.siblings.length < 2) return this;
+
+		// if greater than length normalize to last
+		toIndex = Math.min(toIndex, this.siblings.length - 1);
+
+		// if negative, move that many from end
+		if (toIndex < 0) {
+			toIndex = Math.max(0, this.siblings.length - 1 + toIndex);
+		}
+
+		this.siblings.splice(toIndex, 0, this.siblings.splice(fromIndex, 1)[0]);
+
+		// this is not needed as splice is in-place on reference
+		// this._parent?.resetChildren(siblings);
+
+		return this;
 	}
 
 	contains(key: string) {

@@ -54,6 +54,39 @@ export class Tree<T> {
 		return null;
 	}
 
+	// lowest common ancestor
+	findLCA(node1Key: string, node2Key: string) {
+		const _findLCA = (
+			root: TreeNode<T> | null,
+			node1: TreeNode<T>,
+			node2: TreeNode<T>
+		) => {
+			if (!root || !node1 || !node2) return null;
+
+			if (root === node1 || root === node2) {
+				return root;
+			}
+
+			let foundNodes = 0;
+			let foundNode: TreeNode<T> | null = null;
+
+			for (const child of root.children) {
+				const foundInSubtree = _findLCA(child, node1, node2);
+				if (foundInSubtree) {
+					foundNodes++;
+					foundNode = foundInSubtree;
+				}
+				if (foundNodes === 2) {
+					return root;
+				}
+			}
+
+			return foundNode;
+		};
+
+		return _findLCA(this._root, this.find(node1Key), this.find(node2Key));
+	}
+
 	// sugar
 	insert(parentNodeKey: string, value: T) {
 		const node = this.find(parentNodeKey);
@@ -127,7 +160,7 @@ export class Tree<T> {
 
 		const _walk = (children: TreeNodeDTO<T>['children'], parent: TreeNode<T>) => {
 			for (let child of children) {
-				const node = parent.appendChild(child.value).__setKey(child.key);
+				const node = parent.appendChild(child.value, false).__setKey(child.key);
 				_walk(child.children, node);
 			}
 		};
@@ -140,7 +173,7 @@ export class Tree<T> {
 	}
 
 	contains(key: string) {
-		return this._root?.contains(key);
+		return !!this._root?.contains(key);
 	}
 
 	toString() {
