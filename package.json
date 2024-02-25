@@ -1,0 +1,61 @@
+{
+	"name": "@marianmeres/tree",
+	"version": "1.0.0",
+	"description": "Base tree class",
+	"type": "module",
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.js",
+	"browser": "./dist/index.umd.js",
+	"exports": {
+		"require": "./dist/index.cjs",
+		"import": "./dist/index.js"
+	},
+	"files": [
+		"dist"
+	],
+	"types": "./dist/index.d.ts",
+	"scripts": {
+		"clean": "rimraf dist/*",
+		"prettier": "prettier --write \"{src,tests}/**/*.{js,ts,json}\"",
+		"release": "release -v minor",
+		"release:patch": "release -v patch",
+		"test": "node --loader ts-node/esm tests/index.ts",
+		"test:watch": "nodemon --delay 0.5 -q -w \"src/**/*.*\" -w \"tests/**/*.*\" -x \"node --loader ts-node/esm tests/index.ts\" --",
+		"build": "npm run clean && rollup -c",
+		"dev": "npm run clean && rollup -c -w"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/marianmeres/tree.git"
+	},
+	"keywords": [
+		"tree"
+	],
+	"author": "Marian Meres <marian@meres.sk>",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/marianmeres/tree/issues"
+	},
+	"homepage": "https://github.com/marianmeres/tree#readme",
+	"dependencies": {
+		"@marianmeres/store": "^1.5.0"
+	},
+	"devDependencies": {
+		"@marianmeres/clog": "^1.0.1",
+		"@marianmeres/release": "^1.1.2",
+		"@marianmeres/test-runner": "^2.0.15",
+		"@rollup/plugin-commonjs": "^25.0.7",
+		"@rollup/plugin-node-resolve": "^15.2.3",
+		"@rollup/plugin-terser": "^0.4.4",
+		"@rollup/plugin-typescript": "^11.1.6",
+		"@types/node": "^20.11.20",
+		"mkdirp": "^3.0.1",
+		"nodemon": "^3.1.0",
+		"prettier": "^3.2.5",
+		"rimraf": "^5.0.5",
+		"rollup": "^4.12.0",
+		"ts-node": "^10.9.2",
+		"tslib": "^2.6.2",
+		"typescript": "^5.3.3"
+	}
+}

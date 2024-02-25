@@ -1,2 +1,3 @@
-# tree
+# @marianmeres/tree
+
 Base tree class
