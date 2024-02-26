@@ -1,3 +1,5 @@
+import { Tree } from './tree.js';
+
 export interface TreeNodeDTO<T> {
 	key: string;
 	value: T;
@@ -12,7 +14,9 @@ export class TreeNode<T> {
 
 	constructor(
 		public value: T,
-		protected _parent: TreeNode<T> | null = null
+		protected _parent: TreeNode<T> | null = null,
+		// just a convenience reference
+		public tree: Tree<T> | null = null
 	) {
 		this._key = TreeNode.createKey();
 	}
@@ -28,11 +32,16 @@ export class TreeNode<T> {
 		return this;
 	}
 
+	__setTree(tree: Tree<T> | null) {
+		this.tree = tree;
+		return this;
+	}
+
 	// will traverse downwards and set proper parent (used in node move/copy/append)
 	__syncChildren() {
 		const _walk = (children: TreeNode<T>[], parent: TreeNode<T> | null) => {
 			for (let child of children) {
-				child.__setParent(parent);
+				child.__setParent(parent).__setTree(parent?.tree || null);
 				_walk(child.children, child);
 			}
 		};
@@ -51,10 +60,12 @@ export class TreeNode<T> {
 
 	get root() {
 		let parent = this._parent;
+		let _lastNotEmpty = parent;
 		while (parent) {
 			parent = parent.parent;
+			if (parent) _lastNotEmpty = parent;
 		}
-		return parent;
+		return _lastNotEmpty;
 	}
 
 	get key() {
@@ -88,7 +99,8 @@ export class TreeNode<T> {
 		return -1;
 	}
 
-	protected _assertSameTreeNode(node: TreeNode<T>) {
+	protected _assertSameTopRootNode(node: TreeNode<T>) {
+		// intentionally not comparing node.tree vs this.tree as it might not be available yet
 		if (node instanceof TreeNode && node.root !== this.root) {
 			throw new Error(
 				`Cannot proceed with a node from a different tree. (Use node's value instead.)`
@@ -131,11 +143,12 @@ export class TreeNode<T> {
 	}
 
 	appendChild(valueOrNode: T | TreeNode<T>, _sync = true) {
-		this._assertSameTreeNode(valueOrNode as any);
+		this._assertSameTopRootNode(valueOrNode as any);
 		this._assertNotContains(valueOrNode as any);
 
 		const child =
 			valueOrNode instanceof TreeNode ? valueOrNode : new TreeNode(valueOrNode, this);
+		child.__setParent(this);
 		this._children.push(child);
 
 		// allow to skip sync via flag (optimizing for bulk and/or restore operations)
@@ -144,7 +157,7 @@ export class TreeNode<T> {
 		return child;
 	}
 
-	removeChild(key) {
+	removeChild(key: string) {
 		const idx = this._children.findIndex((n) => n.key === key);
 		if (idx < 0) return false; // not found
 
@@ -152,8 +165,8 @@ export class TreeNode<T> {
 		return this;
 	}
 
-	replaceChild(key, valueOrNode: T | TreeNode<T>): TreeNode<T> | false {
-		this._assertSameTreeNode(valueOrNode as any);
+	replaceChild(key: string, valueOrNode: T | TreeNode<T>): TreeNode<T> | false {
+		this._assertSameTopRootNode(valueOrNode as any);
 
 		const idx = this._children.findIndex((n) => n.key === key);
 		if (idx < 0) return false; // not found
@@ -161,6 +174,7 @@ export class TreeNode<T> {
 		this._assertNotContains(valueOrNode as any);
 		const child =
 			valueOrNode instanceof TreeNode ? valueOrNode : new TreeNode(valueOrNode, this);
+		child.__setParent(this);
 		this._children[idx] = child;
 		this.__syncChildren();
 		return this._children[idx];
@@ -213,6 +227,9 @@ export class TreeNode<T> {
 
 	contains(key: string) {
 		if (!key) return false;
+
+		// self does not contain self, so must not return true
+		// if (this._key === key) return true;
 
 		const _walk = (children: TreeNode<T>[]) => {
 			for (let child of children) {

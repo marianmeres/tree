@@ -3,7 +3,21 @@ import { TreeNode, TreeNodeDTO } from './tree-node.js';
 // inspiration https://www.30secondsofcode.org/js/s/data-structures-tree/
 
 export class Tree<T> {
-	constructor(protected _root: TreeNode<T> | null) {}
+	constructor(protected _root: TreeNode<T> | null = null) {
+		if (this._root) this._root.__setTree(this);
+	}
+
+	appendChild(valueOrNode: T | TreeNode<T>): TreeNode<T> {
+		if (this._root) {
+			return this._root.appendChild(valueOrNode);
+		} else {
+			this._root =
+				valueOrNode instanceof TreeNode ? valueOrNode : new TreeNode(valueOrNode);
+			this._root.__setTree(this);
+			this._root.__syncChildren();
+			return this._root;
+		}
+	}
 
 	get root() {
 		return this._root;
@@ -33,7 +47,7 @@ export class Tree<T> {
 		yield node;
 	}
 
-	find(key: string) {
+	find(key: string): TreeNode<T> | null {
 		for (let node of this.preOrderTraversal()) {
 			if (node.key === key) return node;
 		}
@@ -58,8 +72,8 @@ export class Tree<T> {
 	findLCA(node1Key: string, node2Key: string) {
 		const _findLCA = (
 			root: TreeNode<T> | null,
-			node1: TreeNode<T>,
-			node2: TreeNode<T>
+			node1: TreeNode<T> | null,
+			node2: TreeNode<T> | null
 		) => {
 			if (!root || !node1 || !node2) return null;
 
@@ -87,12 +101,10 @@ export class Tree<T> {
 		return _findLCA(this._root, this.find(node1Key), this.find(node2Key));
 	}
 
-	// sugar
 	insert(parentNodeKey: string, value: T) {
 		const node = this.find(parentNodeKey);
 		if (node) {
-			node.appendChild(value);
-			return this;
+			return node.appendChild(value);
 		}
 		return false;
 	}
@@ -170,6 +182,13 @@ export class Tree<T> {
 
 		this._root = root;
 		return this;
+	}
+
+	size(from?: TreeNode<T> | null) {
+		from ??= this._root;
+		if (!from) return 0;
+		if (from !== this._root && !this.contains(from?.key as string)) return 0;
+		return [...this.preOrderTraversal(from)].length;
 	}
 
 	contains(key: string) {
