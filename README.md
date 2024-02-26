@@ -92,7 +92,7 @@ for (let node of tree.preOrderTraversal()) {
     node.parent // reference to parent node
     node.root // refererence to root node
     node.siblings // array of siblings
-    node.tree // reference to tree the node belongs to
+    node.tree // reference to the tree the node belongs to
     node.value // actual stored value (string in our example)
 
     // and methods
@@ -101,7 +101,7 @@ for (let node of tree.preOrderTraversal()) {
     node.appendChild(valueOrNode: T | TreeNode<T>)
     node.removeChild(key: string)
     node.replaceChild(key: string, valueOrNode: T | TreeNode<T>)
-    node.resetChildred(valuesOrNodes: (T | TreeNode<T>)[] = [])
+    node.resetChildren(valuesOrNodes: (T | TreeNode<T>)[] = [])
     node.previousSibling()
     node.nextSibling()
     node.moveSiblingIndex(toIndex: number)
