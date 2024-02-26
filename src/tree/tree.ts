@@ -57,7 +57,11 @@ export class Tree<T> {
 	findBy(valueOrPropValue: any, propName: string | null = null) {
 		for (let node of this.preOrderTraversal()) {
 			// search by prop + value
-			if (propName && node.value[propName] && node.value[propName] === valueOrPropValue) {
+			if (
+				propName &&
+				node.value[propName] !== undefined &&
+				node.value[propName] === valueOrPropValue
+			) {
 				return node;
 			}
 			// search by value only
