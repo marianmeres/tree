@@ -1,7 +1,7 @@
 # @marianmeres/tree
 
 Base [tree](<https://en.wikipedia.org/wiki/Tree_(data_structure)>) class providing
-common traversal and node manipulation and lookup methods.
+common traversal, lookup and node manipulation operations.
 
 ## Install
 
@@ -63,7 +63,7 @@ assert(tree.size() === 9);
 assert(tree.size(AA) === 5);
 
 // Each node has a unique string "key" (which is auto-created). Most lookup methods are
-// based on this key. Node also has a "value" which any raw value and which can be
+// based on this key. Node also has a "value" which is any raw value and which can be
 // used in lookups as well. In this example, the values are plain strings.
 
 // lookups
@@ -83,7 +83,16 @@ assert(tree.toString() === restored.toString());
 
 // traversal...
 for (let node of tree.preOrderTraversal()) {
-    // ...
+    // each node exposes these props
+    node.key // auto-generated key
+    node.value // actual stored value (string in our example)
+    node.depth // number
+    node.root // refererence to root node
+    node.parent // reference to parent node
+    node.children // array of direct child nodes
+    node.isLeaf // boolean
+    node.isRoot // boolean
+    node.siblings // array of siblings
 }
 
 // lowest common ancestor lookup
