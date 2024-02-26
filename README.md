@@ -84,15 +84,29 @@ assert(tree.toString() === restored.toString());
 // traversal...
 for (let node of tree.preOrderTraversal()) {
     // each node exposes these props
-    node.key // auto-generated key
-    node.value // actual stored value (string in our example)
-    node.depth // number
-    node.root // refererence to root node
-    node.parent // reference to parent node
     node.children // array of direct child nodes
+    node.depth // number
     node.isLeaf // boolean
     node.isRoot // boolean
+    node.key // auto-generated unique key
+    node.parent // reference to parent node
+    node.root // refererence to root node
     node.siblings // array of siblings
+    node.tree // reference to tree the node belongs to
+    node.value // actual stored value (string in our example)
+
+    // and methods
+    node.deepClone()
+    node.toJSON()
+    node.appendChild(valueOrNode: T | TreeNode<T>)
+    node.removeChild(key: string)
+    node.replaceChild(key: string, valueOrNode: T | TreeNode<T>)
+    node.resetChildred(valuesOrNodes: (T | TreeNode<T>)[] = [])
+    node.previousSibling()
+    node.nextSibling()
+    node.moveSiblingIndex(toIndex: number)
+    node.contains(key: string)
+    node.toString()
 }
 
 // lowest common ancestor lookup
@@ -105,8 +119,8 @@ node.replaceChild(key: string, valueOrNode: T | TreeNode<T>)
 node.resetChildren(values: (T | TreeNode<T>)[] = [])
 
 // node/subtree move and copy
-tree.move('sourceNodeKey', 'targetNodeKey');
-tree.copy('sourceNodeKey', 'targetNodeKey');
+tree.move(sourceNodeKey: string, targetNodeKey: string);
+tree.copy(sourceNodeKey: string, targetNodeKey: string);
 
 // node siblings
 assert(AAAA.nextSibling() === AAAB);

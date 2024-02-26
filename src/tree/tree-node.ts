@@ -180,9 +180,9 @@ export class TreeNode<T> {
 		return this._children[idx];
 	}
 
-	resetChildren(values: (T | TreeNode<T>)[] = []) {
+	resetChildren(valuesOrNodes: (T | TreeNode<T>)[] = []) {
 		this._children = [];
-		(values || []).forEach((v) => this.appendChild(v, false));
+		(valuesOrNodes || []).forEach((v) => this.appendChild(v, false));
 		this.__syncChildren();
 		return this;
 	}
