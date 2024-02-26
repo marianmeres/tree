@@ -43,7 +43,6 @@ const AAAB = tree.insert(AAA.key, 'AAAB');
 // const AAAB = AAA.appendChild('AAAB');
 
 // check visually (the `toString` provides simple human readable plain text representation)
-// prettier-ignore
 assert(tree.toString() === `
 A
     AA
@@ -75,7 +74,7 @@ tree.findBy(propertyValue, propertyName) // if the values were objects
 assert(tree.contains(AB.key));
 assert(!AB.contains(AAB.key));
 
-// the tree is fully serializable
+// the tree is fully serializable (internally via JSON.stringify/parse)
 const dump = tree.dump();
 assert(typeof dump === 'string');
 const restored = new Tree().restore(dump);
