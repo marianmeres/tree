@@ -68,9 +68,9 @@ export class TreeNode<T> {
 		if (parent) path.push(parent);
 		while (parent) {
 			parent = parent.parent;
-			if (parent) path.push(parent);
+			if (parent) path.unshift(parent);
 		}
-		return path.reverse();
+		return path;
 	}
 
 	get key() {
