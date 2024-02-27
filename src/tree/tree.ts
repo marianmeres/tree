@@ -7,6 +7,10 @@ export class Tree<T> {
 		if (this._root) this._root.__setTree(this);
 	}
 
+	static factory<T>(dump: string | TreeNodeDTO<T>) {
+		return new Tree().restore(dump);
+	}
+
 	appendChild(valueOrNode: T | TreeNode<T>): TreeNode<T> {
 		if (this._root) {
 			return this._root.appendChild(valueOrNode);
@@ -73,36 +77,32 @@ export class Tree<T> {
 	}
 
 	// lowest common ancestor
-	findLCA(node1Key: string, node2Key: string) {
-		const _findLCA = (
-			root: TreeNode<T> | null,
-			node1: TreeNode<T> | null,
-			node2: TreeNode<T> | null
-		) => {
-			if (!root || !node1 || !node2) return null;
+	findLCA(node1Key: string, node2Key: string): TreeNode<T> | null {
+		// some empty arg? -> no lca
+		if (!node1Key || !node1Key) return null;
 
-			if (root === node1 || root === node2) {
-				return root;
-			}
+		// find starting bottom nodes
+		const n1 = this.find(node1Key);
+		const n2 = this.find(node2Key);
 
-			let foundNodes = 0;
-			let foundNode: TreeNode<T> | null = null;
+		// some not found? -> no lca
+		if (!n1 || !n2) return null;
 
-			for (const child of root.children) {
-				const foundInSubtree = _findLCA(child, node1, node2);
-				if (foundInSubtree) {
-					foundNodes++;
-					foundNode = foundInSubtree;
-				}
-				if (foundNodes === 2) {
-					return root;
-				}
-			}
+		// same nodes? -> lca
+		if (n1 === n2) return n1;
 
-			return foundNode;
-		};
+		// create a lookup map of nodes from one path
+		const map1 = n1.path.reduce((m, n) => ({ ...m, [n.key]: n }), {});
 
-		return _findLCA(this._root, this.find(node1Key), this.find(node2Key));
+		// now traverse the other (path is sorted top-down) and return the lowest match
+		let lca = this._root;
+		for (let n of n2.path) {
+			if (!map1[n.key]) return lca;
+			lca = map1[n.key];
+		}
+
+		//
+		return lca;
 	}
 
 	insert(parentNodeKey: string, value: T) {

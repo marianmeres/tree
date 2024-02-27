@@ -273,8 +273,10 @@ suite.test('find lca', () => {
 	//      C       E       H
 	assert(t.findLCA(a.key, e.key) === b);
 	assert(t.findLCA(a.key, d.key) === b);
+	assert(t.findLCA(b.key, b.key) === b);
 	assert(t.findLCA(a.key, h.key) === f);
 	assert(t.findLCA(f.key, f.key) === f);
+	assert(t.findLCA(c.key, e.key) === d);
 	assert(t.findLCA('foo', f.key) === null);
 	assert(t.findLCA('foo', 'bar') === null);
 });
@@ -357,7 +359,8 @@ A
 	// the tree is fully serializable
 	const dump = tree.dump();
 	assert(typeof dump === 'string');
-	const restored = new Tree().restore(dump);
+	// const restored = new Tree().restore(dump);
+	const restored = Tree.factory<string>(dump);
 	assert(tree.toString() === restored.toString());
 
 	// traversal...

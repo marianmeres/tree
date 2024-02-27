@@ -49,13 +49,7 @@ export class TreeNode<T> {
 	}
 
 	get depth() {
-		let parent = this._parent;
-		let _depth = 0;
-		while (parent) {
-			_depth++;
-			parent = parent.parent;
-		}
-		return _depth;
+		return this.path.length;
 	}
 
 	get root() {
@@ -66,6 +60,17 @@ export class TreeNode<T> {
 			if (parent) _lastNotEmpty = parent;
 		}
 		return _lastNotEmpty;
+	}
+
+	get path() {
+		let parent = this._parent;
+		let path: TreeNode<T>[] = [];
+		if (parent) path.push(parent);
+		while (parent) {
+			parent = parent.parent;
+			if (parent) path.push(parent);
+		}
+		return path.reverse();
 	}
 
 	get key() {
