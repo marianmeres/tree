@@ -1,6 +1,6 @@
 {
 	"name": "@marianmeres/tree",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"description": "Base tree class",
 	"type": "module",
 	"main": "./dist/index.cjs",
