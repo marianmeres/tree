@@ -2,13 +2,14 @@ import { TreeNode, TreeNodeDTO } from './tree-node.js';
 export declare class Tree<T> {
     protected _root: TreeNode<T> | null;
     constructor(_root?: TreeNode<T> | null);
+    static factory<T>(dump: string | TreeNodeDTO<T>): Tree<unknown>;
     appendChild(valueOrNode: T | TreeNode<T>): TreeNode<T>;
     get root(): TreeNode<T> | null;
     preOrderTraversal(node?: TreeNode<T> | null): any;
     postOrderTraversal(node?: TreeNode<T> | null): any;
     find(key: string): TreeNode<T> | null;
     findBy(valueOrPropValue: any, propName?: string | null): any;
-    findLCA(node1Key: string, node2Key: string): any;
+    findLCA(node1Key: string, node2Key: string): TreeNode<T> | null;
     insert(parentNodeKey: string, value: T): false | TreeNode<T>;
     remove(key: string): boolean | this;
     protected _moveOrCopy(srcNodeKey: string, targetNodeKey: string, isMove: boolean): false | this;

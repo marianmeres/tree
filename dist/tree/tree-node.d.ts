@@ -18,6 +18,7 @@ export declare class TreeNode<T> {
     __syncChildren(): void;
     get depth(): number;
     get root(): TreeNode<T> | null;
+    get path(): TreeNode<T>[];
     get key(): string;
     get parent(): TreeNode<T> | null;
     get children(): TreeNode<T>[];
