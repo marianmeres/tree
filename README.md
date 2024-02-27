@@ -78,6 +78,7 @@ assert(!AB.contains(AAB.key));
 const dump = tree.dump();
 assert(typeof dump === 'string');
 const restored = new Tree().restore(dump);
+// const restored = Tree.factory<string>(dump); // same as above
 assert(tree.toString() === restored.toString());
 
 // traversal...
