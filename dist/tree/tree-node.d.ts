@@ -33,7 +33,7 @@ export declare class TreeNode<T> {
     protected _assertSameTopRootNode(node: TreeNode<T>): void;
     protected _assertNotContains(node: TreeNode<T>): void;
     toJSON(): TreeNodeDTO<T>;
-    deepClone(): TreeNode<any>;
+    deepClone(): TreeNode<T>;
     appendChild(valueOrNode: T | TreeNode<T>, _sync?: boolean): TreeNode<T>;
     removeChild(key: string): false | this;
     replaceChild(key: string, valueOrNode: T | TreeNode<T>): TreeNode<T> | false;

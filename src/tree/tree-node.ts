@@ -147,9 +147,9 @@ export class TreeNode<T> {
 		return { key: this._key, value: this.value, children: this._children };
 	}
 
-	deepClone() {
+	deepClone(): TreeNode<T> {
 		// quick-n-dirty
-		const dto = JSON.parse(
+		const dto: TreeNodeDTO<T> = JSON.parse(
 			JSON.stringify(this.toJSON(), (k, v) => {
 				// create new key
 				if (k === 'key') return TreeNode.createKey();
@@ -157,7 +157,7 @@ export class TreeNode<T> {
 			})
 		);
 
-		const clone = new TreeNode(dto.value, this._parent);
+		const clone = new TreeNode<T>(dto.value, this._parent);
 		clone.__setKey(dto.key);
 
 		const _walk = (children: TreeNodeDTO<T>['children'], parent: TreeNode<T>) => {
