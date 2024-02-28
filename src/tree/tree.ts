@@ -3,22 +3,36 @@ import { TreeNode, TreeNodeDTO } from './tree-node.js';
 // initial inspiration https://www.30secondsofcode.org/js/s/data-structures-tree/
 
 export class Tree<T> {
-	constructor(protected _root: TreeNode<T> | null = null) {
-		if (this._root) this._root.__setTree(this);
+	constructor(
+		protected _root: TreeNode<T> | null = null,
+		protected _readonly = false
+	) {
+		if (this._root) {
+			this._root.__setTree(this).__setReadonly(this._readonly).__syncChildren();
+		}
 	}
 
-	static factory<T>(dump: string | TreeNodeDTO<T>) {
-		return new Tree().restore(dump);
+	get readonly() {
+		return this._readonly;
+	}
+
+	__setReadonly(flag: boolean = true) {
+		this._readonly = !!flag;
+		if (this._root) this._root.__setReadonly(this._readonly).__syncChildren();
+		return this;
+	}
+
+	static factory<T>(dump: string | TreeNodeDTO<T>, _readonly = false) {
+		return new Tree<T>(null, _readonly).restore(dump);
 	}
 
 	appendChild(valueOrNode: T | TreeNode<T>): TreeNode<T> {
 		if (this._root) {
-			return this._root.appendChild(valueOrNode);
+			return this._root.appendChild(valueOrNode).__setReadonly(this._readonly);
 		} else {
 			this._root =
 				valueOrNode instanceof TreeNode ? valueOrNode : new TreeNode(valueOrNode);
-			this._root.__setTree(this);
-			this._root.__syncChildren();
+			this._root.__setTree(this).__syncChildren();
 			return this._root;
 		}
 	}
@@ -108,7 +122,7 @@ export class Tree<T> {
 	insert(parentNodeKey: string, value: T) {
 		const node = this.find(parentNodeKey);
 		if (node) {
-			return node.appendChild(value);
+			return node.appendChild(value).__setReadonly(this._readonly);
 		}
 		return false;
 	}
@@ -145,10 +159,10 @@ export class Tree<T> {
 
 		//
 		if (isMove) {
-			target.appendChild(src);
+			target.appendChild(src).__setReadonly(this._readonly);
 			this.remove(src.key);
 		} else {
-			target.appendChild(src.deepClone());
+			target.appendChild(src.deepClone()).__setReadonly(this._readonly);
 		}
 
 		return this;
@@ -184,6 +198,11 @@ export class Tree<T> {
 		const root = new TreeNode(parsed.value).__setKey(parsed.key);
 		_walk(parsed.children, root);
 
+		// walk again - cannot do that above, as it would disable adding children
+		if (this._readonly) {
+			[...this.postOrderTraversal()].map((n) => n?.__setReadonly(this._readonly));
+		}
+
 		this._root = root;
 		return this;
 	}
@@ -191,8 +210,14 @@ export class Tree<T> {
 	size(from?: TreeNode<T> | null) {
 		from ??= this._root;
 		if (!from) return 0;
-		if (from !== this._root && !this.contains(from?.key as string)) return 0;
-		return [...this.preOrderTraversal(from)].length;
+		const len = [...this.preOrderTraversal(from)].length;
+
+		// special case length === 1 suspicion
+		if (from !== this._root && len === 1 && !this.contains(from?.key as string)) {
+			return 0;
+		}
+
+		return len;
 	}
 
 	contains(key: string) {

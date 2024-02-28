@@ -9,6 +9,7 @@ export interface TreeNodeDTO<T> {
 export class TreeNode<T> {
 	protected _key: string;
 	protected _children: TreeNode<T>[] = [];
+	protected _readonly: boolean = false;
 
 	static createKey = () => 'n-' + Math.random().toString(36).slice(2, 10); // "n" as "node"
 
@@ -20,6 +21,10 @@ export class TreeNode<T> {
 	) {
 		this._key = TreeNode.createKey();
 	}
+
+	// the "__XYZ" methods below are public, but not meant as a true userland api (mostly used
+	// internally)... this is a consciously pragmatic decision (yet somewhat ugly from the
+	// OO design point of view)
 
 	// mainly for use in restore
 	__setKey(key: string) {
@@ -37,11 +42,19 @@ export class TreeNode<T> {
 		return this;
 	}
 
+	__setReadonly(flag: boolean = true) {
+		this._readonly = flag;
+		return this;
+	}
+
 	// will traverse downwards and set proper parent (used in node move/copy/append)
 	__syncChildren() {
 		const _walk = (children: TreeNode<T>[], parent: TreeNode<T> | null) => {
 			for (let child of children) {
-				child.__setParent(parent).__setTree(parent?.tree || null);
+				child
+					.__setParent(parent)
+					.__setTree(parent?.tree || null)
+					.__setReadonly(parent?.readonly);
 				_walk(child.children, child);
 			}
 		};
@@ -50,6 +63,10 @@ export class TreeNode<T> {
 
 	get depth() {
 		return this.path.length;
+	}
+
+	get readonly() {
+		return this._readonly;
 	}
 
 	get root() {
@@ -105,6 +122,12 @@ export class TreeNode<T> {
 		return -1;
 	}
 
+	protected _assertNotReadonly() {
+		if (this._readonly) {
+			throw new Error(`Cannot proceed because the node is marked as readonly`);
+		}
+	}
+
 	protected _assertSameTopRootNode(node: TreeNode<T>) {
 		// intentionally not comparing node.tree vs this.tree as it might not be available yet
 		if (node instanceof TreeNode && node.root !== this.root) {
@@ -149,6 +172,7 @@ export class TreeNode<T> {
 	}
 
 	appendChild(valueOrNode: T | TreeNode<T>, _sync = true) {
+		this._assertNotReadonly();
 		this._assertSameTopRootNode(valueOrNode as any);
 		this._assertNotContains(valueOrNode as any);
 
@@ -164,6 +188,7 @@ export class TreeNode<T> {
 	}
 
 	removeChild(key: string) {
+		this._assertNotReadonly();
 		const idx = this._children.findIndex((n) => n.key === key);
 		if (idx < 0) return false; // not found
 
@@ -172,6 +197,7 @@ export class TreeNode<T> {
 	}
 
 	replaceChild(key: string, valueOrNode: T | TreeNode<T>): TreeNode<T> | false {
+		this._assertNotReadonly();
 		this._assertSameTopRootNode(valueOrNode as any);
 
 		const idx = this._children.findIndex((n) => n.key === key);
@@ -187,6 +213,7 @@ export class TreeNode<T> {
 	}
 
 	resetChildren(valuesOrNodes: (T | TreeNode<T>)[] = []) {
+		this._assertNotReadonly();
 		this._children = [];
 		(valuesOrNodes || []).forEach((v) => this.appendChild(v, false));
 		this.__syncChildren();
@@ -210,6 +237,7 @@ export class TreeNode<T> {
 	}
 
 	moveSiblingIndex(toIndex: number) {
+		this._assertNotReadonly();
 		const fromIndex = this.siblingIndex;
 
 		// nothing to move...

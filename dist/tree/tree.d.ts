@@ -1,8 +1,11 @@
 import { TreeNode, TreeNodeDTO } from './tree-node.js';
 export declare class Tree<T> {
     protected _root: TreeNode<T> | null;
-    constructor(_root?: TreeNode<T> | null);
-    static factory<T>(dump: string | TreeNodeDTO<T>): Tree<unknown>;
+    protected _readonly: boolean;
+    constructor(_root?: TreeNode<T> | null, _readonly?: boolean);
+    get readonly(): boolean;
+    __setReadonly(flag?: boolean): this;
+    static factory<T>(dump: string | TreeNodeDTO<T>, _readonly?: boolean): Tree<T>;
     appendChild(valueOrNode: T | TreeNode<T>): TreeNode<T>;
     get root(): TreeNode<T> | null;
     preOrderTraversal(node?: TreeNode<T> | null): any;

@@ -10,7 +10,7 @@ const suite = new TestRunner(path.basename(fileURLToPath(import.meta.url)));
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Sorted_binary_tree_ALL_RGB.svg/586px-Sorted_binary_tree_ALL_RGB.svg.png
-const _createTree = () => {
+const _createTree = (readonly = false) => {
 	//            F
 	//        /     \
 	//      B         G
@@ -19,9 +19,10 @@ const _createTree = () => {
 	//        /   \        \
 	//      C       E       H
 
-	const f = new TreeNode('F');
-	const tree = new Tree<string>(f);
+	// FBADCEGIH - pre order
+	// ACEDBHIGF - post order
 
+	const f = new TreeNode('F');
 	const b = f.appendChild('B');
 	const g = f.appendChild('G');
 	const a = b.appendChild('A');
@@ -30,6 +31,8 @@ const _createTree = () => {
 	const e = d.appendChild('E');
 	const i = g.appendChild('I');
 	const h = i.appendChild('H');
+
+	const tree = new Tree<string>(f, readonly);
 
 	// prettier-ignore
 	const expected = 
@@ -108,6 +111,12 @@ suite.test('tree sanity check', () => {
 	assert(t.findBy('B').siblingIndex === 0);
 	assert(t.findBy('G').siblingIndex === 1);
 	assert(t.findBy('E').siblingIndex === 1);
+});
+
+suite.test('pre/post order traversal', () => {
+	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
+	assert([...t.preOrderTraversal()].map((n) => n?.value).join('') === 'FBADCEGIH');
+	assert([...t.postOrderTraversal()].map((n) => n?.value).join('') === 'ACEDBHIGF');
 });
 
 suite.test('dump, restore', () => {
@@ -262,7 +271,7 @@ suite.test('siblings', () => {
 	// clog('\n' + t.toString());
 });
 
-suite.test('find lca', () => {
+suite.test('lca', () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 	//            F
 	//        /     \
@@ -292,6 +301,34 @@ suite.test('size', () => {
 	assert(t.size(i) === 2);
 	assert(t.size(h) === 1);
 	assert(t.size(new TreeNode('foo')) === 0);
+});
+
+suite.test('readonly', () => {
+	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree(true);
+
+	assert(t.readonly);
+	assert(t.toString() === expected);
+
+	// each node must be marked as readonly as well
+	[a, b, c, d, e, f, g, h, i].forEach((n) => {
+		assert(n.readonly, `${n.value} is not readonly`);
+		assert.throws(() => n.appendChild('a'), `${n.value} appendChild`);
+		assert.throws(() => n.removeChild('a'), `${n.value} removeChild`);
+		assert.throws(() => n.replaceChild('a', 'd'), `${n.value} replaceChild`);
+		assert.throws(() => n.resetChildren(), `${n.value} resetChildren`);
+		assert.throws(() => n.moveSiblingIndex(1), `${n.value} moveSiblingIndex`);
+	});
+
+	assert.throws(() => t.appendChild('foo'));
+	assert.throws(() => t.insert(d.key, 'foo'));
+	assert.throws(() => t.remove(d.key));
+	assert.throws(() => t.move(i.key, b.key));
+	assert.throws(() => t.copy(i.key, b.key));
+
+	// must work via factory param as well
+	const t2 = Tree.factory<string>(_createTree().tree.dump(), true);
+	assert(t2.readonly);
+	assert(t2.toString() === expected);
 });
 
 suite.test('readme example', () => {

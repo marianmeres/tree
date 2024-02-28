@@ -10,13 +10,16 @@ export declare class TreeNode<T> {
     tree: Tree<T> | null;
     protected _key: string;
     protected _children: TreeNode<T>[];
+    protected _readonly: boolean;
     static createKey: () => string;
     constructor(value: T, _parent?: TreeNode<T> | null, tree?: Tree<T> | null);
     __setKey(key: string): this;
     __setParent(parent: TreeNode<T> | null): this;
     __setTree(tree: Tree<T> | null): this;
+    __setReadonly(flag?: boolean): this;
     __syncChildren(): void;
     get depth(): number;
+    get readonly(): boolean;
     get root(): TreeNode<T> | null;
     get path(): TreeNode<T>[];
     get key(): string;
@@ -26,6 +29,7 @@ export declare class TreeNode<T> {
     get isRoot(): boolean;
     get siblings(): TreeNode<T>[];
     get siblingIndex(): number;
+    protected _assertNotReadonly(): void;
     protected _assertSameTopRootNode(node: TreeNode<T>): void;
     protected _assertNotContains(node: TreeNode<T>): void;
     toJSON(): TreeNodeDTO<T>;
