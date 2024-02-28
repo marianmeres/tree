@@ -1,6 +1,6 @@
 import { TreeNode, TreeNodeDTO } from './tree-node.js';
 
-// inspiration https://www.30secondsofcode.org/js/s/data-structures-tree/
+// initial inspiration https://www.30secondsofcode.org/js/s/data-structures-tree/
 
 export class Tree<T> {
 	constructor(protected _root: TreeNode<T> | null = null) {
@@ -91,7 +91,7 @@ export class Tree<T> {
 		// same nodes? -> lca
 		if (n1 === n2) return n1;
 
-		// create a lookup map of nodes from one path
+		// create a lookup map of hierarchy nodes from one path
 		const map1 = n1.path.reduce((m, n) => ({ ...m, [n.key]: n }), {});
 
 		// now traverse the other (path is sorted top-down) and return the lowest match
@@ -123,7 +123,7 @@ export class Tree<T> {
 
 		for (let node of this.preOrderTraversal()) {
 			if (node.removeChild(key)) {
-				return true;
+				return this;
 			}
 		}
 

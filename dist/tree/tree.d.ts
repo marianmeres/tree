@@ -11,7 +11,7 @@ export declare class Tree<T> {
     findBy(valueOrPropValue: any, propName?: string | null): any;
     findLCA(node1Key: string, node2Key: string): TreeNode<T> | null;
     insert(parentNodeKey: string, value: T): false | TreeNode<T>;
-    remove(key: string): boolean | this;
+    remove(key: string): false | this;
     protected _moveOrCopy(srcNodeKey: string, targetNodeKey: string, isMove: boolean): false | this;
     move(srcNodeKey: string, targetNodeKey: string): false | this;
     copy(srcNodeKey: string, targetNodeKey: string): false | this;

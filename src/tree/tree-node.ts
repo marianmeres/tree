@@ -62,6 +62,7 @@ export class TreeNode<T> {
 		return _lastNotEmpty;
 	}
 
+	// returns array of nodes as a hierarchy path
 	get path() {
 		let parent = this._parent;
 		let path: TreeNode<T>[] = [];

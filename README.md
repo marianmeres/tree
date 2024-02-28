@@ -90,7 +90,7 @@ for (let node of tree.preOrderTraversal()) {
     node.isRoot // boolean
     node.key // auto-generated unique key
     node.parent // reference to parent node
-    node.path // path to node as array of nodes from root (top-down)
+    node.path // hierarchy path to node as array of nodes from root (top-down)
     node.root // refererence to root node
     node.siblings // array of siblings
     node.tree // reference to the tree the node belongs to
