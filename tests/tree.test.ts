@@ -359,6 +359,34 @@ suite.test('copy to same parent', () => {
             H`);
 });
 
+suite.test('copy down the path', () => {
+	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
+	//            F
+	//        /     \
+	//      B         G
+	//    /   \         \
+	//  A       D        I
+	//        /   \        \
+	//      C       E       H
+	t.copy(g.key, h.key);
+	// clog(t.toString());
+
+	// prettier-ignore
+	assert(t.toString() === 
+`F
+    B
+        A
+        D
+            C
+            E
+    G
+        I
+            H
+                G
+                    I
+                        H`);
+});
+
 suite.test('siblings', () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 

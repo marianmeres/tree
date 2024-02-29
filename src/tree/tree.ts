@@ -150,7 +150,7 @@ export class Tree<T> {
 		if (!src) throw new Error(`Source node "${srcNodeKey}" not found.`);
 
 		// cyclic reference is not allowed
-		if (src.contains(targetNodeKey)) {
+		if (isMove && src.contains(targetNodeKey)) {
 			throw new Error(`Cyclic reference detected.`);
 		}
 
@@ -161,7 +161,6 @@ export class Tree<T> {
 		if (isMove && target === src) throw new Error(`Cannot move to self.`);
 
 		// also moving to same parent makes no sense, as it is already there
-		// if (target.contains(src.key)) return false;
 		if (isMove && target === src.parent) throw new Error(`Cannot move to same parent.`);
 
 		//
