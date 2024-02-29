@@ -130,7 +130,7 @@ export class TreeNode<T> {
 
 	protected _assertSameTopRootNode(node: TreeNode<T>) {
 		// intentionally not comparing node.tree vs this.tree as it might not be available yet
-		if (node instanceof TreeNode && node.root !== this.root) {
+		if (!this.isRoot && node instanceof TreeNode && node.root !== this.root) {
 			throw new Error(
 				`Cannot proceed with a node from a different tree. (Use node's value instead.)`
 			);
@@ -139,7 +139,13 @@ export class TreeNode<T> {
 
 	protected _assertNotContains(node: TreeNode<T>) {
 		if (node instanceof TreeNode && this.contains(node.key)) {
-			throw new Error(`Cannot proceed, already contains. (Use node's value instead.)`);
+			throw new Error(`Cannot proceed, already contains.`);
+		}
+	}
+
+	protected _assertIsNotSiblingOf(node: TreeNode<T>) {
+		if (node instanceof TreeNode && this.siblings.some((s) => s.key === node.key)) {
+			throw new Error(`Cannot proceed (is sibling of).`);
 		}
 	}
 
@@ -174,7 +180,7 @@ export class TreeNode<T> {
 	appendChild(valueOrNode: T | TreeNode<T>, _sync = true) {
 		this._assertNotReadonly();
 		this._assertSameTopRootNode(valueOrNode as any);
-		this._assertNotContains(valueOrNode as any);
+		this._assertIsNotSiblingOf(valueOrNode as any);
 
 		const child =
 			valueOrNode instanceof TreeNode ? valueOrNode : new TreeNode(valueOrNode, this);
@@ -190,7 +196,7 @@ export class TreeNode<T> {
 	removeChild(key: string) {
 		this._assertNotReadonly();
 		const idx = this._children.findIndex((n) => n.key === key);
-		if (idx < 0) return false; // not found
+		if (idx < 0) throw new Error(`Node "${key}" not found.`);
 
 		this._children.splice(idx, 1);
 		return this;
@@ -201,7 +207,7 @@ export class TreeNode<T> {
 		this._assertSameTopRootNode(valueOrNode as any);
 
 		const idx = this._children.findIndex((n) => n.key === key);
-		if (idx < 0) return false; // not found
+		if (idx < 0) throw new Error(`Node "${key}" not found.`);
 
 		this._assertNotContains(valueOrNode as any);
 		const child =
@@ -260,7 +266,7 @@ export class TreeNode<T> {
 	}
 
 	contains(key: string) {
-		if (!key) return false;
+		if (!key) throw new Error(`Missing key`);
 
 		// self does not contain self, so must not return true
 		// if (this._key === key) return true;

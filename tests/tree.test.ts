@@ -87,8 +87,8 @@ suite.test('node sanity check', () => {
 	assert(n.removeChild(c.key));
 	assert(!n.children.length);
 
-	// remove non existing child returns false
-	assert(!n.removeChild('foo'));
+	// remove non existing child throws
+	assert.throws(() => !n.removeChild('foo'));
 });
 
 suite.test('tree sanity check', () => {
@@ -143,11 +143,31 @@ suite.test('dump, restore', () => {
 
 suite.test('remove', () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
+	//            F
+	//        /     \
+	//      B         G
+	//    /   \         \
+	//  A       D        I
+	//        /   \        \
+	//      C       E       H
 
 	t.remove(d.key);
-	t.remove(g.key);
+	// clog(t.toString());
+	// prettier-ignore
+	assert(t.toString() === 
+`F
+    B
+        A
+    G
+        I
+            H`);
 
-	assert(t.toString() === 'F\n    B\n        A');
+	t.remove(g.key);
+	// prettier-ignore
+	assert(t.toString() === 
+`F
+    B
+        A`);
 
 	// remove root
 	t.remove(t.findBy('F')?.key);
@@ -187,8 +207,16 @@ suite.test('contains', () => {
 
 suite.test('move', () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
-
+	//            F
+	//        /     \
+	//      B         G
+	//    /   \         \
+	//  A       D        I
+	//        /   \        \
+	//      C       E       H
+	// clog('\n' + t.toString());
 	t.move(g.key, a.key);
+	// clog('\n' + t.toString());
 
 	// prettier-ignore
 	assert(t.toString() === 
@@ -203,6 +231,49 @@ suite.test('move', () => {
             E`);
 });
 
+suite.test('move to self', () => {
+	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
+	assert.throws(() => t.move(g.key, g.key));
+	assert(t.toString() === expected); // no change
+});
+
+suite.test('move to same parent', () => {
+	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
+	assert.throws(() => !t.move(g.key, f.key));
+	assert(t.toString() === expected); // no change
+});
+
+suite.test('move down the path', () => {
+	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
+	assert.throws(() => !t.move(g.key, h.key));
+	assert(t.toString() === expected); // no change
+});
+
+suite.test('move up the path', () => {
+	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
+	//            F
+	//        /     \
+	//      B         G
+	//    /   \         \
+	//  A       D        I
+	//        /   \        \
+	//      C       E       H
+	t.move(i.key, f.key);
+	// clog(t.toString());
+
+	// prettier-ignore
+	assert(t.toString() ===
+`F
+    B
+        A
+        D
+            C
+            E
+    G
+    I
+        H`);
+});
+
 suite.test('clone', () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 
@@ -210,8 +281,12 @@ suite.test('clone', () => {
 
 	assert(g.value === clone.value);
 	assert(g.key !== clone.key);
-	assert(g.children[0].value === clone.children[0].value);
-	assert(g.children[0].key !== clone.children[0].key);
+
+	assert(g.children[0].value === clone.children[0].value); // i
+	assert(g.children[0].key !== clone.children[0].key); // i
+
+	assert(g.children[0].children[0].value === clone.children[0].children[0].value); // h
+	assert(g.children[0].children[0].key !== clone.children[0].children[0].key); // h
 
 	// clog(JSON.stringify(g.toJSON(), null, 3));
 	// clog(JSON.stringify(g.deepClone().toJSON(), null, 3));
@@ -219,7 +294,13 @@ suite.test('clone', () => {
 
 suite.test('copy', () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
-
+	//            F
+	//        /     \
+	//      B         G
+	//    /   \         \
+	//  A       D        I
+	//        /   \        \
+	//      C       E       H
 	t.copy(g.key, a.key);
 	// clog(t.toString());
 
@@ -235,6 +316,45 @@ suite.test('copy', () => {
             C
             E
     G
+        I
+            H`);
+});
+
+suite.test('copy to self', () => {
+	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
+	t.copy(g.key, g.key);
+	// clog(t.toString());
+	// prettier-ignore
+	assert(t.toString() === 
+`F
+    B
+        A
+        D
+            C
+            E
+    G
+        I
+            H
+        G
+            I
+                H`);
+});
+
+suite.test('copy to same parent', () => {
+	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
+	t.copy(i.key, g.key);
+	// clog(t.toString());
+	// prettier-ignore
+	assert(t.toString() === 
+`F
+    B
+        A
+        D
+            C
+            E
+    G
+        I
+            H
         I
             H`);
 });
@@ -286,8 +406,8 @@ suite.test('lca', () => {
 	assert(t.findLCA(a.key, h.key) === f);
 	assert(t.findLCA(f.key, f.key) === f);
 	assert(t.findLCA(c.key, e.key) === d);
-	assert(t.findLCA('foo', f.key) === null);
-	assert(t.findLCA('foo', 'bar') === null);
+	assert.throws(() => t.findLCA('foo', f.key) === null);
+	assert.throws(() => t.findLCA('foo', 'bar') === null);
 });
 
 suite.test('size', () => {
@@ -410,14 +530,14 @@ A
 	assert(tree.findLCA(AAB.key, AAAB.key) === AA);
 
 	// node/subtree removal
-	tree.remove('nodeKey');
+	// tree.remove('nodeKey');
 	// node.removeChild(key: string)
 	// node.replaceChild(key: string, valueOrNode: T | TreeNode<T>)
 	// node.resetChildren(values: (T | TreeNode<T>)[] = [])
 
 	// node/subtree move and copy
-	tree.move('sourceNodeKey', 'targetNodeKey');
-	tree.copy('sourceNodeKey', 'targetNodeKey');
+	// tree.move(sourceNodeKey, targetNodeKey);
+	// tree.copy(sourceNodeKey, targetNodeKey);
 
 	// node siblings
 	// @ts-ignore

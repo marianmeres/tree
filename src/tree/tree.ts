@@ -66,6 +66,7 @@ export class Tree<T> {
 	}
 
 	find(key: string): TreeNode<T> | null {
+		if (!key) new Error(`Missing key.`);
 		for (let node of this.preOrderTraversal()) {
 			if (node.key === key) return node;
 		}
@@ -93,14 +94,14 @@ export class Tree<T> {
 	// lowest common ancestor
 	findLCA(node1Key: string, node2Key: string): TreeNode<T> | null {
 		// some empty arg? -> no lca
-		if (!node1Key || !node1Key) return null;
+		if (!node1Key || !node1Key) new Error(`Missing key/s.`);
 
 		// find starting bottom nodes
 		const n1 = this.find(node1Key);
 		const n2 = this.find(node2Key);
 
 		// some not found? -> no lca
-		if (!n1 || !n2) return null;
+		if (!n1 || !n2) throw new Error(`Node "${node1Key}" and/or "${node2Key}" not found.`);
 
 		// same nodes? -> lca
 		if (n1 === n2) return n1;
@@ -124,11 +125,11 @@ export class Tree<T> {
 		if (node) {
 			return node.appendChild(value).__setReadonly(this._readonly);
 		}
-		return false;
+		throw new Error(`Node "${parentNodeKey}" not found.`);
 	}
 
 	remove(key: string) {
-		if (!key) return false;
+		if (!key) new Error(`Missing key.`);
 
 		if (this._root?.key === key) {
 			this._root = null;
@@ -136,17 +137,17 @@ export class Tree<T> {
 		}
 
 		for (let node of this.preOrderTraversal()) {
-			if (node.removeChild(key)) {
+			if (node.key === key && node.parent.removeChild(key)) {
 				return this;
 			}
 		}
 
-		return false;
+		throw new Error(`Node "${key}" not found.`);
 	}
 
 	protected _moveOrCopy(srcNodeKey: string, targetNodeKey: string, isMove: boolean) {
 		const src = this.find(srcNodeKey);
-		if (!src) return false;
+		if (!src) throw new Error(`Source node "${srcNodeKey}" not found.`);
 
 		// cyclic reference is not allowed
 		if (src.contains(targetNodeKey)) {
@@ -154,13 +155,19 @@ export class Tree<T> {
 		}
 
 		const target = this.find(targetNodeKey);
-		if (!target) return false;
-		if (target.contains(src.key)) return false; // already there
+		if (!target) throw new Error(`Target node "${targetNodeKey}" not found.`); // not found
+
+		// moving to self makes no sense
+		if (isMove && target === src) throw new Error(`Cannot move to self.`);
+
+		// also moving to same parent makes no sense, as it is already there
+		// if (target.contains(src.key)) return false;
+		if (isMove && target === src.parent) throw new Error(`Cannot move to same parent.`);
 
 		//
 		if (isMove) {
+			this.remove(src.key); // must come first
 			target.appendChild(src).__setReadonly(this._readonly);
-			this.remove(src.key);
 		} else {
 			target.appendChild(src.deepClone()).__setReadonly(this._readonly);
 		}
