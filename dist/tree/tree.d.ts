@@ -15,9 +15,9 @@ export declare class Tree<T> {
     findLCA(node1Key: string, node2Key: string): TreeNode<T> | null;
     insert(parentNodeKey: string, value: T): TreeNode<T>;
     remove(key: string): this;
-    protected _moveOrCopy(srcNodeKey: string, targetNodeKey: string, isMove: boolean): this;
-    move(srcNodeKey: string, targetNodeKey: string): this;
-    copy(srcNodeKey: string, targetNodeKey: string): this;
+    protected _moveOrCopy(srcNodeKey: string, targetNodeKey: string, isMove: boolean): TreeNode<T>;
+    move(srcNodeKey: string, targetNodeKey: string): TreeNode<T>;
+    copy(srcNodeKey: string, targetNodeKey: string): TreeNode<T>;
     toJSON(): TreeNodeDTO<T> | undefined;
     dump(): string;
     restore(dump: string | TreeNodeDTO<T>): this;

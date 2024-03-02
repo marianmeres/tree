@@ -166,12 +166,10 @@ export class Tree<T> {
 		//
 		if (isMove) {
 			this.remove(src.key); // must come first
-			target.appendChild(src).__setReadonly(this._readonly);
+			return target.appendChild(src).__setReadonly(this._readonly);
 		} else {
-			target.appendChild(src.deepClone()).__setReadonly(this._readonly);
+			return target.appendChild(src.deepClone()).__setReadonly(this._readonly);
 		}
-
-		return this;
 	}
 
 	move(srcNodeKey: string, targetNodeKey: string) {
