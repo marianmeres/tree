@@ -239,7 +239,9 @@ suite.test('move to self', () => {
 
 suite.test('move to same parent', () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
-	assert.throws(() => !t.move(g.key, f.key));
+	// assert.throws(() => !t.move(g.key, f.key));
+	// this is a noop
+	assert(t.move(g.key, f.key) === g);
 	assert(t.toString() === expected); // no change
 });
 

@@ -161,7 +161,9 @@ export class Tree<T> {
 		if (isMove && target === src) throw new Error(`Cannot move to self.`);
 
 		// also moving to same parent makes no sense, as it is already there
-		if (isMove && target === src.parent) throw new Error(`Cannot move to same parent.`);
+		// if (isMove && target === src.parent) throw new Error(`Cannot move to same parent.`);
+		// not throwing, just return noop src
+		if (isMove && target === src.parent) return src;
 
 		//
 		if (isMove) {
