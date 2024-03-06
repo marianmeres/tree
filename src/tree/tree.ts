@@ -196,12 +196,15 @@ export class Tree<T> {
 
 		const _walk = (children: TreeNodeDTO<T>['children'], parent: TreeNode<T>) => {
 			for (let child of children) {
-				const node = parent.appendChild(child.value, false).__setKey(child.key);
+				const node = parent
+					.appendChild(child.value, false)
+					.__setTree(this)
+					.__setKey(child.key);
 				_walk(child.children, node);
 			}
 		};
 
-		const root = new TreeNode(parsed.value).__setKey(parsed.key);
+		const root = new TreeNode(parsed.value).__setTree(this).__setKey(parsed.key);
 		_walk(parsed.children, root);
 
 		// walk again - cannot do that above, as it would disable adding children

@@ -119,7 +119,7 @@ suite.test('pre/post order traversal', () => {
 	assert([...t.postOrderTraversal()].map((n) => n?.value).join('') === 'ACEDBHIGF');
 });
 
-suite.test('dump, restore', () => {
+suite.only('dump, restore', () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 
 	// clog(JSON.stringify(t.toJSON(), null, 3));
@@ -139,6 +139,9 @@ suite.test('dump, restore', () => {
 
 	assert(restored2.toString() === expected);
 	assert(dump === restored2.dump()); // checks keys as well
+
+	// check tree ref
+	assert(restored2?.root?.tree === restored2);
 });
 
 suite.test('remove', () => {
