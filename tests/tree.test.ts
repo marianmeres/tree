@@ -119,7 +119,7 @@ suite.test('pre/post order traversal', () => {
 	assert([...t.postOrderTraversal()].map((n) => n?.value).join('') === 'ACEDBHIGF');
 });
 
-suite.only('dump, restore', () => {
+suite.test('dump, restore', () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 
 	// clog(JSON.stringify(t.toJSON(), null, 3));

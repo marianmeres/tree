@@ -283,6 +283,8 @@ export class TreeNode<T> {
 	}
 
 	toString() {
-		return '    '.repeat(this.depth) + this.value?.toString(); // + ` (${this.key})`;
+		let s = this.value?.toString();
+		if (s === '[object Object]') s = this.key;
+		return '    '.repeat(this.depth) + s;
 	}
 }
