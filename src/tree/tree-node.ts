@@ -11,7 +11,8 @@ export class TreeNode<T> {
 	protected _children: TreeNode<T>[] = [];
 	protected _readonly: boolean = false;
 
-	static createKey = () => 'n-' + Math.random().toString(36).slice(2, 10); // "n" as "node"
+	// prefixing with "n" (as "node") so it will be safe to use as html el id (cannot start with digit)
+	static createKey = () => 'n' + Math.random().toString(36).slice(2, 10);
 
 	constructor(
 		public value: T,
