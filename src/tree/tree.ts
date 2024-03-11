@@ -149,9 +149,11 @@ export class Tree<T> {
 		const src = this.find(srcNodeKey);
 		if (!src) throw new Error(`Source node "${srcNodeKey}" not found.`);
 
-		// cyclic reference is not allowed
+		// recursive reference is not allowed
 		if (isMove && src.contains(targetNodeKey)) {
-			throw new Error(`Cyclic reference detected.`);
+			throw new Error(
+				`Recursive reference detected. Node cannot be moved to its own descendant.`
+			);
 		}
 
 		const target = this.find(targetNodeKey);

@@ -119,6 +119,16 @@ suite.test('pre/post order traversal', () => {
 	assert([...t.postOrderTraversal()].map((n) => n?.value).join('') === 'ACEDBHIGF');
 });
 
+suite.test('tree.toJSON', () => {
+	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
+	// shallow compare - must not be same instance
+	assert(t.toJSON() !== t.toJSON());
+	// but deep members are the same
+	assert(t.toJSON()?.key === t.toJSON()?.key);
+	assert(t.toJSON()?.value === t.toJSON()?.value);
+	assert(t.toJSON()?.children === t.toJSON()?.children);
+});
+
 suite.test('dump, restore', () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 
