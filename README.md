@@ -131,7 +131,7 @@ assert(AAAB.previousSibling() === AAAA);
 assert(AAAB.siblingIndex === 1);
 assert(AAAB.moveSiblingIndex(0).siblingIndex === 0);
 
-// tree can be marked as readonly where ALL modifiing operations fail, e.g.
+// tree can be marked as readonly where ALL modifying operations fail, e.g.
 const t = Tree.factory<string>(dump, true);
 assert(t.readonly);
 assert.throws(() => t.appendChild('foo'));
