@@ -89,11 +89,11 @@ export class Tree<T> {
 		}
 	}
 
-	/** Searches nodes by given key */
-	find(key: string): TreeNode<T> | null {
-		if (!key) new Error(`Missing key.`);
+	/** Searches nodes by given id */
+	find(id: string): TreeNode<T> | null {
+		if (!id) new Error(`Missing id`);
 		for (const node of this.preOrderTraversal()) {
-			if (node?.key === key) return node;
+			if (node?.id === id) return node;
 		}
 		return null;
 	}
@@ -122,85 +122,85 @@ export class Tree<T> {
 	}
 
 	/** Searches for lowest common ancestor of the two nodes */
-	findLCA(node1Key: string, node2Key: string): TreeNode<T> | null {
+	findLCA(node1Id: string, node2Id: string): TreeNode<T> | null {
 		// some empty arg? -> no lca
-		if (!node1Key || !node1Key) new Error(`Missing key/s.`);
+		if (!node1Id || !node1Id) new Error(`Missing id`);
 
 		// find starting bottom nodes
-		const n1 = this.find(node1Key);
-		const n2 = this.find(node2Key);
+		const n1 = this.find(node1Id);
+		const n2 = this.find(node2Id);
 
 		// some not found? -> no lca
 		if (!n1 || !n2)
-			throw new Error(`Node "${node1Key}" and/or "${node2Key}" not found.`);
+			throw new Error(`Node "${node1Id}" and/or "${node2Id}" not found`);
 
 		// same nodes? -> lca
 		if (n1 === n2) return n1;
 
 		// create a lookup map of hierarchy nodes from one path
 		const map1: Record<string, TreeNode<T>> = n1.path.reduce(
-			(m, n) => ({ ...m, [n.key]: n }),
+			(m, n) => ({ ...m, [n.id]: n }),
 			{}
 		);
 
 		// now traverse the other (path is sorted top-down) and return the lowest match
 		let lca = this._root;
 		for (const n of n2.path) {
-			if (!map1[n.key]) return lca;
-			lca = map1[n.key];
+			if (!map1[n.id]) return lca;
+			lca = map1[n.id];
 		}
 
 		//
 		return lca;
 	}
 
-	/** Inserts new node under given node key */
-	insert(parentNodeKey: string, value: T): TreeNode<T> {
-		const node = this.find(parentNodeKey);
+	/** Inserts new node under given node id */
+	insert(parentNodeId: string, value: T): TreeNode<T> {
+		const node = this.find(parentNodeId);
 		if (node) {
 			return node.appendChild(value).__setReadonly(this._readonly);
 		}
-		throw new Error(`Node "${parentNodeKey}" not found.`);
+		throw new Error(`Node "${parentNodeId}" not found`);
 	}
 
-	/** Removes node by key */
-	remove(key: string): Tree<T> {
-		if (!key) new Error(`Missing key.`);
+	/** Removes node by id */
+	remove(id: string): Tree<T> {
+		if (!id) new Error(`Missing id`);
 
-		if (this._root?.key === key) {
+		if (this._root?.id === id) {
 			this._root = null;
 			return this;
 		}
 
 		for (const node of this.preOrderTraversal()) {
-			if (node?.key === key && node?.parent?.removeChild(key)) {
+			if (node?.id === id && node?.parent?.removeChild(id)) {
 				return this;
 			}
 		}
 
-		throw new Error(`Node "${key}" not found.`);
+		throw new Error(`Node "${id}" not found`);
 	}
 
 	protected _moveOrCopy(
-		srcNodeKey: string,
-		targetNodeKey: string,
+		srcNodeId: string,
+		targetNodeId: string,
 		isMove: boolean
 	): TreeNode<T> {
-		const src = this.find(srcNodeKey);
-		if (!src) throw new Error(`Source node "${srcNodeKey}" not found.`);
+		const src = this.find(srcNodeId);
+		if (!src) throw new Error(`Source node "${srcNodeId}" not found`);
 
 		// recursive reference is not allowed
-		if (isMove && src.contains(targetNodeKey)) {
+		if (isMove && src.contains(targetNodeId)) {
 			throw new Error(
-				`Recursive reference detected. Node cannot be moved to its own descendant.`
+				`Recursive reference detected (node cannot be moved to its own descendant)`
 			);
 		}
 
-		const target = this.find(targetNodeKey);
-		if (!target) throw new Error(`Target node "${targetNodeKey}" not found.`); // not found
+		const target = this.find(targetNodeId);
+		if (!target) throw new Error(`Target node "${targetNodeId}" not found`); // not found
 
 		// moving to self makes no sense
-		if (isMove && target === src) throw new Error(`Cannot move to self.`);
+		if (isMove && target === src) throw new Error(`Cannot move to self`);
 
 		// also moving to same parent makes no sense, as it is already there
 		// if (isMove && target === src.parent) throw new Error(`Cannot move to same parent.`);
@@ -209,7 +209,7 @@ export class Tree<T> {
 
 		//
 		if (isMove) {
-			this.remove(src.key); // must come first
+			this.remove(src.id); // must come first
 			return target.appendChild(src).__setReadonly(this._readonly);
 		} else {
 			return target.appendChild(src.deepClone()).__setReadonly(this._readonly);
@@ -217,13 +217,13 @@ export class Tree<T> {
 	}
 
 	/** Moves node */
-	move(srcNodeKey: string, targetNodeKey: string): TreeNode<T> {
-		return this._moveOrCopy(srcNodeKey, targetNodeKey, true);
+	move(srcNodeId: string, targetNodeId: string): TreeNode<T> {
+		return this._moveOrCopy(srcNodeId, targetNodeId, true);
 	}
 
 	/** Copies node */
-	copy(srcNodeKey: string, targetNodeKey: string): TreeNode<T> {
-		return this._moveOrCopy(srcNodeKey, targetNodeKey, false);
+	copy(srcNodeId: string, targetNodeId: string): TreeNode<T> {
+		return this._moveOrCopy(srcNodeId, targetNodeId, false);
 	}
 
 	/** Returns internal data structure */
@@ -249,14 +249,12 @@ export class Tree<T> {
 				const node = parent
 					.appendChild(child.value, false)
 					.__setTree(this)
-					.__setKey(child.key);
+					.__setId(child.id);
 				_walk(child.children, node);
 			}
 		};
 
-		const root = new TreeNode(parsed.value)
-			.__setTree(this)
-			.__setKey(parsed.key);
+		const root = new TreeNode(parsed.value).__setTree(this).__setId(parsed.id);
 		_walk(parsed.children, root);
 
 		// walk again - cannot do that above, as it would disable adding children
@@ -280,7 +278,7 @@ export class Tree<T> {
 		if (
 			from !== this._root &&
 			len === 1 &&
-			!this.contains(from?.key as string)
+			!this.contains(from?.id as string)
 		) {
 			return 0;
 		}
@@ -288,9 +286,9 @@ export class Tree<T> {
 		return len;
 	}
 
-	/** Returns boolean wheather the key exists in the tree */
-	contains(key: string, maxDepth = 0): boolean {
-		return !!this._root?.contains(key, maxDepth);
+	/** Returns boolean wheather the id exists in the tree */
+	contains(id: string, maxDepth = 0): boolean {
+		return !!this._root?.contains(id, maxDepth);
 	}
 
 	has(value: T, maxDepth = 0, compareFn?: (a: T, b: T) => boolean): boolean {

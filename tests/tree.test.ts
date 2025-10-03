@@ -60,8 +60,8 @@ Deno.test("node sanity check", () => {
 	const n2 = new TreeNode({ foo: "bar" });
 	assertEquals(n2.value.foo, "bar");
 
-	// keys exists but are not equal
-	assert(n.key && n2.key && n.key !== n2.key);
+	// ids exists but are not equal
+	assert(n.id && n2.id && n.id !== n2.id);
 
 	// append child
 	const b = n.appendChild("b");
@@ -72,12 +72,12 @@ Deno.test("node sanity check", () => {
 	assertEquals(n.children.length, 1);
 
 	// replace child
-	const c = n.replaceChild(b.key, "c") as TreeNode<string>;
+	const c = n.replaceChild(b.id, "c") as TreeNode<string>;
 	assertEquals(n.children[0].value, "c" as any);
 	assertEquals(n.children.length, 1);
 
 	// remove child
-	assert(n.removeChild(c.key));
+	assert(n.removeChild(c.id));
 	assert(!n.children.length);
 
 	// remove non existing child throws
@@ -92,13 +92,13 @@ Deno.test("tree sanity check", () => {
 	// clog('\n' + t.toString());
 	assertEquals(t.toString(), expected);
 
-	// find by key
-	assertEquals(t.find(d.key)?.key, d.key);
-	assertEquals(t.find(h.key)?.key, h.key);
+	// find by id
+	assertEquals(t.find(d.id)?.id, d.id);
+	assertEquals(t.find(h.id)?.id, h.id);
 
 	// find by value
-	assertEquals(t.findBy("D")?.key, d.key);
-	assertEquals(t.findBy("H")?.key, h.key);
+	assertEquals(t.findBy("D")?.id, d.id);
+	assertEquals(t.findBy("H")?.id, h.id);
 
 	// sibling index check
 	assertEquals(t.findBy("B")?.siblingIndex, 0);
@@ -131,7 +131,7 @@ Deno.test("tree.toJSON", () => {
 	// shallow compare - must not be same instance
 	assert(t.toJSON() !== t.toJSON());
 	// but deep members are the same
-	assertEquals(t.toJSON()?.key, t.toJSON()?.key);
+	assertEquals(t.toJSON()?.id, t.toJSON()?.id);
 	assertEquals(t.toJSON()?.value, t.toJSON()?.value);
 	assertEquals(t.toJSON()?.children, t.toJSON()?.children);
 });
@@ -148,14 +148,14 @@ Deno.test("dump, restore", () => {
 	restored.restore(dump);
 
 	assertEquals(restored.toString(), expected);
-	assertEquals(dump, restored.dump()); // checks keys as well
+	assertEquals(dump, restored.dump()); // checks ids as well
 
 	// restore from raw DTO
 	const restored2 = new Tree(null);
 	restored2.restore(t.toJSON()!);
 
 	assertEquals(restored2.toString(), expected);
-	assertEquals(dump, restored2.dump()); // checks keys as well
+	assertEquals(dump, restored2.dump()); // checks ids as well
 
 	// check tree ref
 	assertEquals(restored2?.root?.tree, restored2);
@@ -171,7 +171,7 @@ Deno.test("remove", () => {
 	//        /   \        \
 	//      C       E       H
 
-	t.remove(d.key);
+	t.remove(d.id);
 	// clog(t.toString());
 	// prettier-ignore
 	assertEquals(t.toString(),
@@ -182,7 +182,7 @@ Deno.test("remove", () => {
         I
             H`);
 
-	t.remove(g.key);
+	t.remove(g.id);
 	// prettier-ignore
 	assertEquals(t.toString(), 
 `F
@@ -190,17 +190,17 @@ Deno.test("remove", () => {
         A`);
 
 	// remove root
-	t.remove(t.findBy("F")?.key!);
+	t.remove(t.findBy("F")?.id!);
 	assertEquals(t.toString(), "");
 });
 
 Deno.test("insert", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 
-	t.insert(i.key, "X");
+	t.insert(i.id, "X");
 	assertEquals(t.toString(), `${expected}\n            X`);
 
-	t.insert(d.key, "Y");
+	t.insert(d.id, "Y");
 	assert(t.toString().includes("\n            E\n            Y\n    G"));
 });
 
@@ -208,27 +208,27 @@ Deno.test("contains", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 
 	// root
-	assert(t.contains(h.key));
-	assert(f.contains(a.key));
+	assert(t.contains(h.id));
+	assert(f.contains(a.id));
 	assert(!t.contains("foo"));
 
 	// sub tree
-	assert(d.contains(c.key));
-	assert(d.contains(e.key));
-	assert(!d.contains(f.key));
-	assert(!d.contains(a.key));
-	assert(!a.contains(g.key));
+	assert(d.contains(c.id));
+	assert(d.contains(e.id));
+	assert(!d.contains(f.id));
+	assert(!d.contains(a.id));
+	assert(!a.contains(g.id));
 
 	// contains self must be false
-	assert(!t.contains(f.key));
-	assert(!t.contains(t.root?.key!));
-	assert(!d.contains(d.key));
+	assert(!t.contains(f.id));
+	assert(!t.contains(t.root?.id!));
+	assert(!d.contains(d.id));
 
 	// with specified max depth
-	assert(t.contains(b.key, 1));
-	assert(t.contains(g.key, 1));
-	assert(!t.contains(a.key, 1)); // a is deeper than 1
-	assert(!t.contains(e.key, 2)); // e is deeper than 1
+	assert(t.contains(b.id, 1));
+	assert(t.contains(g.id, 1));
+	assert(!t.contains(a.id, 1)); // a is deeper than 1
+	assert(!t.contains(e.id, 2)); // e is deeper than 1
 });
 
 Deno.test("has", () => {
@@ -271,7 +271,7 @@ Deno.test("move", () => {
 	//        /   \        \
 	//      C       E       H
 	// clog('\n' + t.toString());
-	t.move(g.key, a.key);
+	t.move(g.id, a.id);
 	// clog('\n' + t.toString());
 
 	// prettier-ignore
@@ -289,21 +289,20 @@ Deno.test("move", () => {
 
 Deno.test("move to self", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
-	assertThrows(() => t.move(g.key, g.key));
+	assertThrows(() => t.move(g.id, g.id));
 	assertEquals(t.toString(), expected); // no change
 });
 
 Deno.test("move to same parent", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
-	// assertThrows(() => !t.move(g.key, f.key));
 	// this is a noop
-	assertEquals(t.move(g.key, f.key), g);
+	assertEquals(t.move(g.id, f.id), g);
 	assert(t.toString(), expected); // no change
 });
 
 Deno.test("move down the path", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
-	assertThrows(() => !t.move(g.key, h.key));
+	assertThrows(() => !t.move(g.id, h.id));
 	assertEquals(t.toString(), expected); // no change
 });
 
@@ -316,7 +315,7 @@ Deno.test("move up the path", () => {
 	//  A       D        I
 	//        /   \        \
 	//      C       E       H
-	t.move(i.key, f.key);
+	t.move(i.id, f.id);
 	// clog(t.toString());
 
 	// prettier-ignore
@@ -338,16 +337,16 @@ Deno.test("clone", () => {
 	const clone = g.deepClone();
 
 	assertEquals(g.value, clone.value);
-	assert(g.key !== clone.key);
+	assert(g.id !== clone.id);
 
 	assertEquals(g.children[0].value, clone.children[0].value); // i
-	assert(g.children[0].key !== clone.children[0].key); // i
+	assert(g.children[0].id !== clone.children[0].id); // i
 
 	assertEquals(
 		g.children[0].children[0].value,
 		clone.children[0].children[0].value
 	); // h
-	assert(g.children[0].children[0].key !== clone.children[0].children[0].key); // h
+	assert(g.children[0].children[0].id !== clone.children[0].children[0].id); // h
 
 	// clog(JSON.stringify(g.toJSON(), null, 3));
 	// clog(JSON.stringify(g.deepClone().toJSON(), null, 3));
@@ -362,7 +361,7 @@ Deno.test("copy", () => {
 	//  A       D        I
 	//        /   \        \
 	//      C       E       H
-	t.copy(g.key, a.key);
+	t.copy(g.id, a.id);
 	// clog(t.toString());
 
 	// prettier-ignore
@@ -383,7 +382,7 @@ Deno.test("copy", () => {
 
 Deno.test("copy to self", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
-	t.copy(g.key, g.key);
+	t.copy(g.id, g.id);
 	// clog(t.toString());
 	// prettier-ignore
 	assertEquals(t.toString(), 
@@ -403,7 +402,7 @@ Deno.test("copy to self", () => {
 
 Deno.test("copy to same parent", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
-	t.copy(i.key, g.key);
+	t.copy(i.id, g.id);
 	// clog(t.toString());
 	// prettier-ignore
 	assertEquals(t.toString(), 
@@ -429,7 +428,7 @@ Deno.test("copy down the path", () => {
 	//  A       D        I
 	//        /   \        \
 	//      C       E       H
-	t.copy(g.key, h.key);
+	t.copy(g.id, h.id);
 	// clog(t.toString());
 
 	// prettier-ignore
@@ -489,13 +488,13 @@ Deno.test("lca", () => {
 	//  A       D        I
 	//        /   \        \
 	//      C       E       H
-	assertEquals(t.findLCA(a.key, e.key), b);
-	assertEquals(t.findLCA(a.key, d.key), b);
-	assertEquals(t.findLCA(b.key, b.key), b);
-	assertEquals(t.findLCA(a.key, h.key), f);
-	assertEquals(t.findLCA(f.key, f.key), f);
-	assertEquals(t.findLCA(c.key, e.key), d);
-	assertThrows(() => t.findLCA("foo", f.key) === null);
+	assertEquals(t.findLCA(a.id, e.id), b);
+	assertEquals(t.findLCA(a.id, d.id), b);
+	assertEquals(t.findLCA(b.id, b.id), b);
+	assertEquals(t.findLCA(a.id, h.id), f);
+	assertEquals(t.findLCA(f.id, f.id), f);
+	assertEquals(t.findLCA(c.id, e.id), d);
+	assertThrows(() => t.findLCA("foo", f.id) === null);
 	assertThrows(() => t.findLCA("foo", "bar") === null);
 });
 
@@ -529,10 +528,10 @@ Deno.test("readonly", () => {
 	});
 
 	assertThrows(() => t.appendChild("foo"));
-	assertThrows(() => t.insert(d.key, "foo"));
-	assertThrows(() => t.remove(d.key));
-	assertThrows(() => t.move(i.key, b.key));
-	assertThrows(() => t.copy(i.key, b.key));
+	assertThrows(() => t.insert(d.id, "foo"));
+	assertThrows(() => t.remove(d.id));
+	assertThrows(() => t.move(i.id, b.id));
+	assertThrows(() => t.copy(i.id, b.id));
 
 	// must work via factory param as well
 	const t2 = Tree.factory<string>(_createTree().tree.dump(), true);
@@ -563,8 +562,8 @@ Deno.test("readme example", () => {
 	const ABB = AB.appendChild("ABB");
 
 	// there is also `tree.insert` method, which works similar (we can specify the parent node)
-	const AAAA = tree.insert(AAA.key, "AAAA");
-	const AAAB = tree.insert(AAA.key, "AAAB");
+	const AAAA = tree.insert(AAA.id, "AAAA");
+	const AAAB = tree.insert(AAA.id, "AAAB");
 	// const AAAA = AAA.appendChild('AAAA'); // same effect as above
 	// const AAAB = AAA.appendChild('AAAB');
 
@@ -588,19 +587,19 @@ A
 	// sub-brach AA has 5 (`size` accepts "fromNode" param)
 	assertEquals(tree.size(AA), 5);
 
-	// Each node has a unique string "key" (which is auto-created). Most lookup methods are
-	// based on this key. Node also has a "value" which any raw value and which can be
+	// Each node has a unique string "id" (which is auto-created). Most lookup methods are
+	// based on this id. Node also has a "value" which any raw value and which can be
 	// used in lookups as well. In this example, the values are plain strings.
 
 	// lookups
 	// @ts-ignore
-	assertEquals(tree.find(A.key), A);
+	assertEquals(tree.find(A.id), A);
 	assertEquals(tree.findBy("AB"), AB);
 	// tree.findBy(propertyValue, propertyName) if the values were objects
 
 	// contains lookup
-	assert(tree.contains(AB.key));
-	assert(!AB.contains(AAB.key));
+	assert(tree.contains(AB.id));
+	assert(!AB.contains(AAB.id));
 
 	// the tree is fully serializable
 	const dump = tree.dump();
@@ -616,17 +615,17 @@ A
 
 	// lowest common ancestor lookup
 	// @ts-ignore
-	assertEquals(tree.findLCA(AAB.key, AAAB.key), AA);
+	assertEquals(tree.findLCA(AAB.id, AAAB.id), AA);
 
 	// node/subtree removal
-	// tree.remove('nodeKey');
-	// node.removeChild(key: string)
-	// node.replaceChild(key: string, valueOrNode: T | TreeNode<T>)
+	// tree.remove('nodeId');
+	// node.removeChild(id: string)
+	// node.replaceChild(id: string, valueOrNode: T | TreeNode<T>)
 	// node.resetChildren(values: (T | TreeNode<T>)[] = [])
 
 	// node/subtree move and copy
-	// tree.move(sourceNodeKey, targetNodeKey);
-	// tree.copy(sourceNodeKey, targetNodeKey);
+	// tree.move(sourceNodeId, targetNodeId);
+	// tree.copy(sourceNodeId, targetNodeId);
 
 	// node siblings
 	// @ts-ignore

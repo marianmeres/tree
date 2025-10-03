@@ -39,8 +39,8 @@ const ABA = AB.appendChild('ABA');
 const ABB = AB.appendChild('ABB');
 
 // there is also `tree.insert` method, which works similar (we can specify the parent node)
-const AAAA = tree.insert(AAA.key, 'AAAA');
-const AAAB = tree.insert(AAA.key, 'AAAB');
+const AAAA = tree.insert(AAA.id, 'AAAA');
+const AAAB = tree.insert(AAA.id, 'AAAB');
 // const AAAA = AAA.appendChild('AAAA'); // same effect as above
 // const AAAB = AAA.appendChild('AAAB');
 
@@ -63,18 +63,18 @@ assert(tree.size() === 9);
 // sub-brach AA has 5 (`size` accepts "fromNode" param)
 assert(tree.size(AA) === 5);
 
-// Each node has a unique string "key" (which is auto-created). Most lookup methods are
-// based on this key. Node also has a "value" which is any raw value and which can be
+// Each node has a unique string "id" (which is auto-created). Most lookup methods are
+// based on this id. Node also has a "value" which is any raw value and which can be
 // used in lookups as well. In this example, the values are plain strings.
 
 // lookups
-assert(tree.find(A.key) === A);
+assert(tree.find(A.id) === A);
 assert(tree.findBy('AB') === AB);
 tree.findBy(propertyValue, propertyName) // if the values were objects
 
 // contains lookup
-assert(tree.contains(AB.key));
-assert(!AB.contains(AAB.key));
+assert(tree.contains(AB.id));
+assert(!AB.contains(AAB.id));
 
 // the tree is fully serializable (internally via JSON.stringify/parse)
 const dump = tree.dump();
@@ -90,7 +90,7 @@ for (let node of tree.preOrderTraversal()) {
     node.depth // number
     node.isLeaf // boolean
     node.isRoot // boolean
-    node.key // auto-generated unique key
+    node.id // auto-generated unique id
     node.parent // reference to parent node
     node.path // hierarchy path to node as array of nodes from root (top-down)
     node.root // refererence to root node
@@ -102,28 +102,28 @@ for (let node of tree.preOrderTraversal()) {
     node.deepClone()
     node.toJSON()
     node.appendChild(valueOrNode: T | TreeNode<T>)
-    node.removeChild(key: string)
-    node.replaceChild(key: string, valueOrNode: T | TreeNode<T>)
+    node.removeChild(id: string)
+    node.replaceChild(id: string, valueOrNode: T | TreeNode<T>)
     node.resetChildren(valuesOrNodes: (T | TreeNode<T>)[] = [])
     node.previousSibling()
     node.nextSibling()
     node.moveSiblingIndex(toIndex: number)
-    node.contains(key: string)
+    node.contains(id: string)
     node.toString()
 }
 
 // lowest common ancestor lookup
-assert(tree.findLCA(AAB.key, AAAB.key) === AA);
+assert(tree.findLCA(AAB.id, AAAB.id) === AA);
 
 // node/subtree removal
-tree.remove('nodeKey');
-node.removeChild(key: string)
-node.replaceChild(key: string, valueOrNode: T | TreeNode<T>)
+tree.remove('nodeId');
+node.removeChild(id: string)
+node.replaceChild(id: string, valueOrNode: T | TreeNode<T>)
 node.resetChildren(values: (T | TreeNode<T>)[] = [])
 
 // node/subtree move and copy
-tree.move(sourceNodeKey: string, targetNodeKey: string);
-tree.copy(sourceNodeKey: string, targetNodeKey: string);
+tree.move(sourceNodeId: string, targetNodeId: string);
+tree.copy(sourceNodeId: string, targetNodeId: string);
 
 // node siblings
 assert(AAAA.nextSibling() === AAAB);
