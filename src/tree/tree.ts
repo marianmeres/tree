@@ -98,34 +98,21 @@ export class Tree<T> {
 		return null;
 	}
 
-	/** Searches nodes by given value or prop+value pair  */
-	findBy(
+	/** Searches all nodes (including root) by given value or prop+value pair */
+	findAllBy(
 		valueOrPropValue: any,
 		propName: string | null = null,
+		maxDepth = 0,
 		valueCompareEqualFn?: (a: T, b: T) => boolean
-	): TreeNode<T> | null {
-		// strict compare by default
-		valueCompareEqualFn ??= (a: T, b: T) => a === b;
-
-		for (const node of this.preOrderTraversal()) {
-			if (!node) return null;
-			// search by prop + value
-			else if (
-				propName &&
-				(node as any)?.value[propName] !== undefined &&
-				(node as any)?.value[propName] === valueOrPropValue
-			) {
-				return node;
-			}
-			// search by value only
-			else if (
-				!propName &&
-				valueCompareEqualFn(node?.value, valueOrPropValue)
-			) {
-				return node;
-			}
-		}
-		return null;
+	): TreeNode<T>[] {
+		return (
+			this.root?.findAllBy(
+				valueOrPropValue,
+				propName,
+				maxDepth,
+				valueCompareEqualFn
+			) ?? []
+		);
 	}
 
 	/** Searches for lowest common ancestor of the two nodes */

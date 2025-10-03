@@ -345,7 +345,62 @@ export class TreeNode<T> {
 		return _walk(this._children, 0);
 	}
 
-	get() {}
+	/** Checks if current node either equals value or prop+value pair */
+	matches(
+		valueOrPropValue: any,
+		propName: string | null = null,
+		valueCompareEqualFn?: (a: T, b: T) => boolean
+	): TreeNode<T> | null {
+		// strict compare by default
+		valueCompareEqualFn ??= (a: T, b: T) => a === b;
+		// search by prop + value
+		if (
+			propName &&
+			(this.value as any)[propName] !== undefined &&
+			(this.value as any)[propName] === valueOrPropValue
+		) {
+			return this;
+		}
+		// search by value only
+		else if (!propName && valueCompareEqualFn(this?.value, valueOrPropValue)) {
+			return this;
+		}
+		return null;
+	}
+
+	/** Searches all nodes (self + children) by given value or prop+value pair */
+	findAllBy(
+		valueOrPropValue: any,
+		propName: string | null = null,
+		maxDepth = 0,
+		valueCompareEqualFn?: (a: T, b: T) => boolean
+	): TreeNode<T>[] {
+		// strict compare by default
+		valueCompareEqualFn ??= (a: T, b: T) => a === b;
+
+		const _walk = (
+			children: TreeNode<T>[],
+			depth: number,
+			results: TreeNode<T>[]
+		) => {
+			if (maxDepth > 0 && ++depth > maxDepth) return results;
+
+			for (const node of children) {
+				if (node.matches(valueOrPropValue, propName, valueCompareEqualFn)) {
+					results.push(node);
+				}
+				results = _walk(node.children, depth, results);
+			}
+			return results;
+		};
+
+		// compare self as well
+		const results = [this.matches(valueOrPropValue, propName)].filter(
+			Boolean
+		) as TreeNode<T>[];
+
+		return _walk(this._children, 0, results);
+	}
 
 	/** Returns string representation (for debugging purposes) */
 	toString(): string {

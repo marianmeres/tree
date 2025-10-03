@@ -97,13 +97,13 @@ Deno.test("tree sanity check", () => {
 	assertEquals(t.find(h.id)?.id, h.id);
 
 	// find by value
-	assertEquals(t.findBy("D")?.id, d.id);
-	assertEquals(t.findBy("H")?.id, h.id);
+	assertEquals(t.findAllBy("D")?.[0].id, d.id);
+	assertEquals(t.findAllBy("H")?.[0].id, h.id);
 
 	// sibling index check
-	assertEquals(t.findBy("B")?.siblingIndex, 0);
-	assertEquals(t.findBy("G")?.siblingIndex, 1);
-	assertEquals(t.findBy("E")?.siblingIndex, 1);
+	assertEquals(t.findAllBy("B")?.[0].siblingIndex, 0);
+	assertEquals(t.findAllBy("G")?.[0].siblingIndex, 1);
+	assertEquals(t.findAllBy("E")?.[0].siblingIndex, 1);
 });
 
 Deno.test("pre/post order traversal", () => {
@@ -190,7 +190,7 @@ Deno.test("remove", () => {
         A`);
 
 	// remove root
-	t.remove(t.findBy("F")?.id!);
+	t.remove(t.findAllBy("F")?.[0].id!);
 	assertEquals(t.toString(), "");
 });
 
@@ -259,6 +259,24 @@ Deno.test("has", () => {
 	const compare = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 	assert(!t.has("b"));
 	assert(t.has("b", 0, compare));
+});
+
+Deno.test("findAllBy", () => {
+	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
+
+	// found deep
+	let r = t.findAllBy("H");
+	assertEquals(r.map((v) => v.value).join(""), "H");
+
+	// found respecting max depth
+	r = t.findAllBy("H", null, 1);
+	assert(!r.length);
+	r = t.findAllBy("G", null, 1);
+	assertEquals(r.map((v) => v.value).join(""), "G");
+
+	// not found
+	r = f.findAllBy("X");
+	assertEquals(r.map((v) => v.value).join(""), "");
 });
 
 Deno.test("move", () => {
@@ -594,7 +612,7 @@ A
 	// lookups
 	// @ts-ignore
 	assertEquals(tree.find(A.id), A);
-	assertEquals(tree.findBy("AB"), AB);
+	assertEquals(tree.findAllBy("AB"), [AB]);
 	// tree.findBy(propertyValue, propertyName) if the values were objects
 
 	// contains lookup
