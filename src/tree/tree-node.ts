@@ -1,18 +1,22 @@
 import type { Tree } from "./tree.ts";
 
+/** Tree node data transfer object */
 export interface TreeNodeDTO<T> {
 	key: string;
 	value: T;
 	children: TreeNodeDTO<T>[];
 }
 
+/** The the node abstraction class */
 export class TreeNode<T> {
 	protected _key: string;
 	protected _children: TreeNode<T>[] = [];
 	protected _readonly: boolean = false;
 
-	// prefixing with "n" (as "node") so it will be safe to use as html el id (cannot start with digit)
-	static createKey = () => "n" + Math.random().toString(36).slice(2, 10);
+	/** Returns random id (prefixed with "n" so it will be safe to use as html el id) */
+	static createKey(): string {
+		return "n" + Math.random().toString(36).slice(2, 10);
+	}
 
 	constructor(
 		public value: T,
@@ -27,29 +31,32 @@ export class TreeNode<T> {
 	// internally)... this is a consciously pragmatic decision (yet somewhat ugly from the
 	// OO design point of view)
 
-	// mainly for use in restore
-	__setKey(key: string) {
+	/** Sets the "key" of the node */
+	__setKey(key: string): TreeNode<T> {
 		this._key = key;
 		return this;
 	}
 
-	__setParent(parent: TreeNode<T> | null) {
+	/** Sets the parent of the node */
+	__setParent(parent: TreeNode<T> | null): TreeNode<T> {
 		this._parent = parent;
 		return this;
 	}
 
-	__setTree(tree: Tree<T> | null) {
+	/** Sets the tree reference of the node */
+	__setTree(tree: Tree<T> | null): TreeNode<T> {
 		this.tree = tree;
 		return this;
 	}
 
-	__setReadonly(flag: boolean = true) {
+	/** Sets the readonly reference of the node */
+	__setReadonly(flag: boolean = true): TreeNode<T> {
 		this._readonly = flag;
 		return this;
 	}
 
-	// will traverse downwards and set proper parent (used in node move/copy/append)
-	__syncChildren() {
+	/** Will traverse downwards and set proper parent (used in node move/copy/append) */
+	__syncChildren(): void {
 		const _walk = (children: TreeNode<T>[], parent: TreeNode<T> | null) => {
 			for (const child of children) {
 				child
@@ -62,15 +69,18 @@ export class TreeNode<T> {
 		return _walk(this._children, this);
 	}
 
-	get depth() {
+	/** Gets the depth of the node */
+	get depth(): number {
 		return this.path.length;
 	}
 
-	get readonly() {
+	/** Gets the readonly flag of the node */
+	get readonly(): boolean {
 		return this._readonly;
 	}
 
-	get root() {
+	/** Gets the root node of the node */
+	get root(): TreeNode<T> | null {
 		let parent = this._parent;
 		let _lastNotEmpty = parent;
 		while (parent) {
@@ -80,8 +90,8 @@ export class TreeNode<T> {
 		return _lastNotEmpty;
 	}
 
-	// returns array of nodes as a hierarchy path
-	get path() {
+	/** Returns array of nodes as a hierarchy path */
+	get path(): TreeNode<T>[] {
 		let parent = this._parent;
 		const path: TreeNode<T>[] = [];
 		if (parent) path.push(parent);
@@ -92,31 +102,38 @@ export class TreeNode<T> {
 		return path;
 	}
 
-	get key() {
+	/** Gets the node key */
+	get key(): string {
 		return this._key;
 	}
 
-	get parent() {
+	/** Gets the node parent */
+	get parent(): TreeNode<T> | null {
 		return this._parent;
 	}
 
-	get children() {
+	/** Gets the node's array of child nodes */
+	get children(): TreeNode<T>[] {
 		return this._children;
 	}
 
-	get isLeaf() {
+	/** Returns boolean whether the node is a leaf */
+	get isLeaf(): boolean {
 		return this._children.length === 0;
 	}
 
-	get isRoot() {
+	/** Returns boolean whether the node is a root node */
+	get isRoot(): boolean {
 		return this._parent === null;
 	}
 
-	get siblings() {
+	/** Returns the node's array of sibling nodes*/
+	get siblings(): TreeNode<T>[] {
 		return this._parent?.children || [];
 	}
 
-	get siblingIndex() {
+	/** Returns the node's index in the array of sibling nodes */
+	get siblingIndex(): number {
 		if (this.siblings.length) {
 			return this.siblings.findIndex((n) => n.key === this._key);
 		}
@@ -153,10 +170,12 @@ export class TreeNode<T> {
 		}
 	}
 
+	/** Returns the data representation of the node */
 	toJSON(): TreeNodeDTO<T> {
 		return { key: this._key, value: this.value, children: this._children };
 	}
 
+	/** Deep clones current node (with new key) */
 	deepClone(): TreeNode<T> {
 		// quick-n-dirty
 		const dto: TreeNodeDTO<T> = JSON.parse(
@@ -184,7 +203,8 @@ export class TreeNode<T> {
 		return clone;
 	}
 
-	appendChild(valueOrNode: T | TreeNode<T>, _sync = true) {
+	/** Appends node to the children array */
+	appendChild(valueOrNode: T | TreeNode<T>, _sync = true): TreeNode<T> {
 		this._assertNotReadonly();
 		this._assertSameTopRootNode(valueOrNode as any);
 		this._assertIsNotSiblingOf(valueOrNode as any);
@@ -202,7 +222,8 @@ export class TreeNode<T> {
 		return child;
 	}
 
-	removeChild(key: string) {
+	/** Removes node by key */
+	removeChild(key: string): TreeNode<T> {
 		this._assertNotReadonly();
 		const idx = this._children.findIndex((n) => n.key === key);
 		if (idx < 0) throw new Error(`Node "${key}" not found.`);
@@ -211,6 +232,7 @@ export class TreeNode<T> {
 		return this;
 	}
 
+	/** Replaces node (identified by key) with the one provided */
 	replaceChild(key: string, valueOrNode: T | TreeNode<T>): TreeNode<T> | false {
 		this._assertNotReadonly();
 		this._assertSameTopRootNode(valueOrNode as any);
@@ -229,7 +251,8 @@ export class TreeNode<T> {
 		return this._children[idx];
 	}
 
-	resetChildren(valuesOrNodes: (T | TreeNode<T>)[] = []) {
+	/** Empties existing and adds provided children */
+	resetChildren(valuesOrNodes: (T | TreeNode<T>)[] = []): TreeNode<T> {
 		this._assertNotReadonly();
 		this._children = [];
 		(valuesOrNodes || []).forEach((v) => this.appendChild(v, false));
@@ -237,7 +260,8 @@ export class TreeNode<T> {
 		return this;
 	}
 
-	previousSibling() {
+	/** Returns previous sibling (relative from self) */
+	previousSibling(): TreeNode<T> | null {
 		if (this.siblings.length) {
 			const selfIdx = this.siblings.findIndex((n) => n.key === this._key);
 			return this.siblings[selfIdx - 1] || null;
@@ -245,7 +269,8 @@ export class TreeNode<T> {
 		return null;
 	}
 
-	nextSibling() {
+	/** Returns next sibling (relative from self) */
+	nextSibling(): TreeNode<T> | null {
 		if (this.siblings.length) {
 			const selfIdx = this.siblings.findIndex((n) => n.key === this._key);
 			return this.siblings[selfIdx + 1] || null;
@@ -253,7 +278,8 @@ export class TreeNode<T> {
 		return null;
 	}
 
-	moveSiblingIndex(toIndex: number) {
+	/** Moves self to another sibling index */
+	moveSiblingIndex(toIndex: number): TreeNode<T> {
 		this._assertNotReadonly();
 		const fromIndex = this.siblingIndex;
 
@@ -276,14 +302,15 @@ export class TreeNode<T> {
 		return this;
 	}
 
-	contains(key: string) {
+	/** Returns boolean wheather the provided key exists within children */
+	contains(key: string): boolean {
 		if (!key) throw new Error(`Missing key`);
 
 		// self does not contain self, so must not return true
 		// if (this._key === key) return true;
 
 		const _walk = (children: TreeNode<T>[]) => {
-			for (let child of children) {
+			for (const child of children) {
 				if (child.key === key) return true;
 				if (_walk(child.children)) return true;
 			}
@@ -293,7 +320,8 @@ export class TreeNode<T> {
 		return _walk(this._children);
 	}
 
-	toString() {
+	/** Returns string representation (for debugging purposes) */
+	toString(): string {
 		let s = this.value?.toString();
 		if (s === "[object Object]") s = this.key;
 		return "    ".repeat(this.depth) + s;

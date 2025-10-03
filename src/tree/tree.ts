@@ -1,8 +1,6 @@
 import { TreeNode, type TreeNodeDTO } from "./tree-node.ts";
 
-// initial inspiration https://www.30secondsofcode.org/js/s/data-structures-tree/
-
-/**  */
+/** The top Tree data structure class abstraction */
 export class Tree<T> {
 	constructor(
 		protected _root: TreeNode<T> | null = null,
@@ -13,20 +11,24 @@ export class Tree<T> {
 		}
 	}
 
-	get readonly() {
+	/** Returns boolean whether the tree is marked as readonly */
+	get readonly(): boolean {
 		return this._readonly;
 	}
 
-	__setReadonly(flag: boolean = true) {
+	/** Sets internal readonly flag */
+	__setReadonly(flag: boolean = true): Tree<T> {
 		this._readonly = !!flag;
 		if (this._root) this._root.__setReadonly(this._readonly).__syncChildren();
 		return this;
 	}
 
-	static factory<T>(dump: string | TreeNodeDTO<T>, _readonly = false) {
+	/** Creates new Tree from provided input */
+	static factory<T>(dump: string | TreeNodeDTO<T>, _readonly = false): Tree<T> {
 		return new Tree<T>(null, _readonly).restore(dump);
 	}
 
+	/** Appends new node to the tree */
 	appendChild(valueOrNode: T | TreeNode<T>): TreeNode<T> {
 		if (this._root) {
 			return this._root.appendChild(valueOrNode).__setReadonly(this._readonly);
@@ -40,12 +42,12 @@ export class Tree<T> {
 		}
 	}
 
-	get root() {
+	/** Gets the root node */
+	get root(): TreeNode<T> | null {
 		return this._root;
 	}
 
-	// https://en.wikipedia.org/wiki/Tree_traversal
-	// Depth-first, pre-order
+	/** Depth-first, pre-order... https://en.wikipedia.org/wiki/Tree_traversal */
 	*preOrderTraversal(node?: TreeNode<T> | null): Generator<TreeNode<T> | null> {
 		node ??= this._root;
 		yield node;
@@ -56,8 +58,7 @@ export class Tree<T> {
 		}
 	}
 
-	// https://en.wikipedia.org/wiki/Tree_traversal
-	// Depth-first, post-order
+	/** Depth-first, post-order... https://en.wikipedia.org/wiki/Tree_traversal */
 	*postOrderTraversal(
 		node?: TreeNode<T> | null
 	): Generator<TreeNode<T> | null> {
@@ -70,6 +71,7 @@ export class Tree<T> {
 		yield node;
 	}
 
+	/** Searches nodes by given key */
 	find(key: string): TreeNode<T> | null {
 		if (!key) new Error(`Missing key.`);
 		for (const node of this.preOrderTraversal()) {
@@ -78,6 +80,7 @@ export class Tree<T> {
 		return null;
 	}
 
+	/** Searches nodes by given value or prop+value pair  */
 	findBy(
 		valueOrPropValue: any,
 		propName: string | null = null
@@ -100,7 +103,7 @@ export class Tree<T> {
 		return null;
 	}
 
-	// lowest common ancestor
+	/** Searches for lowest common ancestor of the two nodes */
 	findLCA(node1Key: string, node2Key: string): TreeNode<T> | null {
 		// some empty arg? -> no lca
 		if (!node1Key || !node1Key) new Error(`Missing key/s.`);
@@ -133,6 +136,7 @@ export class Tree<T> {
 		return lca;
 	}
 
+	/** Inserts new node under given node key */
 	insert(parentNodeKey: string, value: T): TreeNode<T> {
 		const node = this.find(parentNodeKey);
 		if (node) {
@@ -141,6 +145,7 @@ export class Tree<T> {
 		throw new Error(`Node "${parentNodeKey}" not found.`);
 	}
 
+	/** Removes node by key */
 	remove(key: string): Tree<T> {
 		if (!key) new Error(`Missing key.`);
 
@@ -162,7 +167,7 @@ export class Tree<T> {
 		srcNodeKey: string,
 		targetNodeKey: string,
 		isMove: boolean
-	) {
+	): TreeNode<T> {
 		const src = this.find(srcNodeKey);
 		if (!src) throw new Error(`Source node "${srcNodeKey}" not found.`);
 
@@ -193,22 +198,27 @@ export class Tree<T> {
 		}
 	}
 
+	/** Moves node */
 	move(srcNodeKey: string, targetNodeKey: string): TreeNode<T> {
 		return this._moveOrCopy(srcNodeKey, targetNodeKey, true);
 	}
 
+	/** Copies node */
 	copy(srcNodeKey: string, targetNodeKey: string): TreeNode<T> {
 		return this._moveOrCopy(srcNodeKey, targetNodeKey, false);
 	}
 
+	/** Returns internal data structure */
 	toJSON(): TreeNodeDTO<T> | undefined {
 		return this._root?.toJSON();
 	}
 
+	/** Returns internal data structure as string */
 	dump(): string {
 		return JSON.stringify(this);
 	}
 
+	/** Restores internal state from given input */
 	restore(dump: string | TreeNodeDTO<T>): Tree<T> {
 		let parsed: TreeNodeDTO<T> = dump as any;
 		if (typeof dump === "string") parsed = JSON.parse(dump);
@@ -242,6 +252,7 @@ export class Tree<T> {
 		return this;
 	}
 
+	/** Returns total number of nodes in the tree */
 	size(from?: TreeNode<T> | null): number {
 		from ??= this._root;
 		if (!from) return 0;
@@ -259,10 +270,12 @@ export class Tree<T> {
 		return len;
 	}
 
+	/** Returns boolean wheather the key exists in the tree */
 	contains(key: string): boolean {
 		return !!this._root?.contains(key);
 	}
 
+	/** Returns textual representation of the tree (for debugging purposes) */
 	toString(): string {
 		return [...this.preOrderTraversal()].map((n) => n?.toString()).join("\n");
 	}
