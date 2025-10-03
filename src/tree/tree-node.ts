@@ -324,7 +324,7 @@ export class TreeNode<T> {
 
 	/** Returns boolean whether the provided value exists within children.
 	 * Looks down to the maxDepth level (if non-zero, otherwise no limit). */
-	has(value: T, maxDepth = 0, compareFn?: (a: T, b: T) => boolean) {
+	has(value: T, maxDepth = 0, compareFn?: (a: T, b: T) => boolean): boolean {
 		// strict compare by default
 		compareFn ??= (a: T, b: T) => a === b;
 
