@@ -71,6 +71,24 @@ export class Tree<T> {
 		yield node;
 	}
 
+	/** Breadth-first, level-order traversal */
+	*levelOrderTraversal(
+		node?: TreeNode<T> | null
+	): Generator<TreeNode<T> | null> {
+		node ??= this._root;
+		if (!node) return;
+		const queue: (TreeNode<T> | null)[] = [node];
+		while (queue.length) {
+			const current = queue.shift();
+			if (current) {
+				yield current;
+				for (const child of current.children) {
+					queue.push(child);
+				}
+			}
+		}
+	}
+
 	/** Searches nodes by given key */
 	find(key: string): TreeNode<T> | null {
 		if (!key) new Error(`Missing key.`);
