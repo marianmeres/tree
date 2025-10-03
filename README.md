@@ -69,7 +69,7 @@ assert(tree.size(AA) === 5);
 
 // lookups
 assert(tree.find(A.id) === A);
-assert(tree.findBy('AB') === AB);
+assertEquals(tree.findAllBy('AB'), [AB]);
 tree.findBy(propertyValue, propertyName) // if the values were objects
 
 // contains lookup
