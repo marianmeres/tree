@@ -289,8 +289,12 @@ export class Tree<T> {
 	}
 
 	/** Returns boolean wheather the key exists in the tree */
-	contains(key: string): boolean {
-		return !!this._root?.contains(key);
+	contains(key: string, maxDepth = 0): boolean {
+		return !!this._root?.contains(key, maxDepth);
+	}
+
+	has(value: T, maxDepth = 0, compareFn?: (a: T, b: T) => boolean): boolean {
+		return !!this._root?.has(value, maxDepth, compareFn);
 	}
 
 	/** Returns textual representation of the tree (for debugging purposes) */

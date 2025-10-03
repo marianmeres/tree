@@ -223,6 +223,42 @@ Deno.test("contains", () => {
 	assert(!t.contains(f.key));
 	assert(!t.contains(t.root?.key!));
 	assert(!d.contains(d.key));
+
+	// with specified max depth
+	assert(t.contains(b.key, 1));
+	assert(t.contains(g.key, 1));
+	assert(!t.contains(a.key, 1)); // a is deeper than 1
+	assert(!t.contains(e.key, 2)); // e is deeper than 1
+});
+
+Deno.test("has", () => {
+	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
+	//            F
+	//        /     \
+	//      B         G
+	//    /   \         \
+	//  A       D        I
+	//        /   \        \
+	//      C       E       H
+
+	assert(!t.has("F")); // root does not have self within childred
+
+	assert(t.has("B"));
+	assert(t.has("I"));
+	assert(t.has("E"));
+
+	assert(b.has("E"));
+	assert(!b.has("G"));
+	assert(!b.has("F"));
+
+	// with max depth
+	assert(t.has("B", 1));
+	assert(!t.has("E", 1));
+
+	// custom compare fn
+	const compare = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
+	assert(!t.has("b"));
+	assert(t.has("b", 0, compare));
 });
 
 Deno.test("move", () => {

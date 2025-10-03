@@ -302,22 +302,43 @@ export class TreeNode<T> {
 		return this;
 	}
 
-	/** Returns boolean wheather the provided key exists within children */
-	contains(key: string): boolean {
+	/** Returns boolean whether the provided key exists within children.
+	 * Looks down to the maxDepth level (if non-zero, otherwise no limit). */
+	contains(key: string, maxDepth = 0): boolean {
 		if (!key) throw new Error(`Missing key`);
 
 		// self does not contain self, so must not return true
 		// if (this._key === key) return true;
 
-		const _walk = (children: TreeNode<T>[]) => {
+		const _walk = (children: TreeNode<T>[], depth: number) => {
+			if (maxDepth > 0 && ++depth > maxDepth) return false;
 			for (const child of children) {
 				if (child.key === key) return true;
-				if (_walk(child.children)) return true;
+				if (_walk(child.children, depth)) return true;
 			}
 			return false;
 		};
 
-		return _walk(this._children);
+		return _walk(this._children, 0);
+	}
+
+	/** Returns boolean whether the provided value exists within children.
+	 * Looks down to the maxDepth level (if non-zero, otherwise no limit). */
+	has(value: T, maxDepth = 0, compareFn?: (a: T, b: T) => boolean) {
+		// strict compare by default
+		compareFn ??= (a: T, b: T) => a === b;
+
+		const _walk = (children: TreeNode<T>[], depth: number) => {
+			if (maxDepth > 0 && ++depth > maxDepth) return false;
+			for (const child of children) {
+				// console.log(child.value, value);
+				if (compareFn(child.value, value)) return true;
+				if (_walk(child.children, depth)) return true;
+			}
+			return false;
+		};
+
+		return _walk(this._children, 0);
 	}
 
 	/** Returns string representation (for debugging purposes) */

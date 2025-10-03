@@ -83,7 +83,7 @@ const restored = new Tree().restore(dump);
 // const restored = Tree.factory<string>(dump); // same as above
 assert(tree.toString() === restored.toString());
 
-// traversal...
+// traversal... postOrderTraversal, postOrderTraversal, levelOrderTraversal
 for (let node of tree.preOrderTraversal()) {
     // each node exposes these props
     node.children // array of direct child nodes
