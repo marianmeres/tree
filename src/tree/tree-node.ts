@@ -1,4 +1,4 @@
-import { Tree } from './tree.js';
+import type { Tree } from "./tree.ts";
 
 export interface TreeNodeDTO<T> {
 	key: string;
@@ -12,7 +12,7 @@ export class TreeNode<T> {
 	protected _readonly: boolean = false;
 
 	// prefixing with "n" (as "node") so it will be safe to use as html el id (cannot start with digit)
-	static createKey = () => 'n' + Math.random().toString(36).slice(2, 10);
+	static createKey = () => "n" + Math.random().toString(36).slice(2, 10);
 
 	constructor(
 		public value: T,
@@ -51,7 +51,7 @@ export class TreeNode<T> {
 	// will traverse downwards and set proper parent (used in node move/copy/append)
 	__syncChildren() {
 		const _walk = (children: TreeNode<T>[], parent: TreeNode<T> | null) => {
-			for (let child of children) {
+			for (const child of children) {
 				child
 					.__setParent(parent)
 					.__setTree(parent?.tree || null)
@@ -83,7 +83,7 @@ export class TreeNode<T> {
 	// returns array of nodes as a hierarchy path
 	get path() {
 		let parent = this._parent;
-		let path: TreeNode<T>[] = [];
+		const path: TreeNode<T>[] = [];
 		if (parent) path.push(parent);
 		while (parent) {
 			parent = parent.parent;
@@ -145,7 +145,10 @@ export class TreeNode<T> {
 	}
 
 	protected _assertIsNotSiblingOf(node: TreeNode<T>) {
-		if (node instanceof TreeNode && this.siblings.some((s) => s.key === node.key)) {
+		if (
+			node instanceof TreeNode &&
+			this.siblings.some((s) => s.key === node.key)
+		) {
 			throw new Error(`Cannot proceed (is sibling of).`);
 		}
 	}
@@ -159,7 +162,7 @@ export class TreeNode<T> {
 		const dto: TreeNodeDTO<T> = JSON.parse(
 			JSON.stringify(this.toJSON(), (k, v) => {
 				// create new key
-				if (k === 'key') return TreeNode.createKey();
+				if (k === "key") return TreeNode.createKey();
 				return v;
 			})
 		);
@@ -167,8 +170,11 @@ export class TreeNode<T> {
 		const clone = new TreeNode<T>(dto.value, this._parent);
 		clone.__setKey(dto.key);
 
-		const _walk = (children: TreeNodeDTO<T>['children'], parent: TreeNode<T>) => {
-			for (let child of children) {
+		const _walk = (
+			children: TreeNodeDTO<T>["children"],
+			parent: TreeNode<T>
+		) => {
+			for (const child of children) {
 				const _node = parent.appendChild(child.value).__setKey(child.key);
 				_walk(child.children, _node);
 			}
@@ -184,7 +190,9 @@ export class TreeNode<T> {
 		this._assertIsNotSiblingOf(valueOrNode as any);
 
 		const child =
-			valueOrNode instanceof TreeNode ? valueOrNode : new TreeNode(valueOrNode, this);
+			valueOrNode instanceof TreeNode
+				? valueOrNode
+				: new TreeNode(valueOrNode, this);
 		child.__setParent(this);
 		this._children.push(child);
 
@@ -212,7 +220,9 @@ export class TreeNode<T> {
 
 		this._assertNotContains(valueOrNode as any);
 		const child =
-			valueOrNode instanceof TreeNode ? valueOrNode : new TreeNode(valueOrNode, this);
+			valueOrNode instanceof TreeNode
+				? valueOrNode
+				: new TreeNode(valueOrNode, this);
 		child.__setParent(this);
 		this._children[idx] = child;
 		this.__syncChildren();
@@ -285,7 +295,7 @@ export class TreeNode<T> {
 
 	toString() {
 		let s = this.value?.toString();
-		if (s === '[object Object]') s = this.key;
-		return '    '.repeat(this.depth) + s;
+		if (s === "[object Object]") s = this.key;
+		return "    ".repeat(this.depth) + s;
 	}
 }

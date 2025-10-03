@@ -1,7 +1,8 @@
-import { TreeNode, TreeNodeDTO } from './tree-node.js';
+import { TreeNode, type TreeNodeDTO } from "./tree-node.ts";
 
 // initial inspiration https://www.30secondsofcode.org/js/s/data-structures-tree/
 
+/**  */
 export class Tree<T> {
 	constructor(
 		protected _root: TreeNode<T> | null = null,
@@ -31,7 +32,9 @@ export class Tree<T> {
 			return this._root.appendChild(valueOrNode).__setReadonly(this._readonly);
 		} else {
 			this._root =
-				valueOrNode instanceof TreeNode ? valueOrNode : new TreeNode(valueOrNode);
+				valueOrNode instanceof TreeNode
+					? valueOrNode
+					: new TreeNode(valueOrNode);
 			this._root.__setTree(this).__syncChildren();
 			return this._root;
 		}
@@ -43,11 +46,11 @@ export class Tree<T> {
 
 	// https://en.wikipedia.org/wiki/Tree_traversal
 	// Depth-first, pre-order
-	*preOrderTraversal(node?: TreeNode<T> | null) {
+	*preOrderTraversal(node?: TreeNode<T> | null): Generator<TreeNode<T> | null> {
 		node ??= this._root;
 		yield node;
 		if (node?.children.length) {
-			for (let child of node.children) {
+			for (const child of node.children) {
 				yield* this.preOrderTraversal(child);
 			}
 		}
@@ -55,10 +58,12 @@ export class Tree<T> {
 
 	// https://en.wikipedia.org/wiki/Tree_traversal
 	// Depth-first, post-order
-	*postOrderTraversal(node?: TreeNode<T> | null) {
+	*postOrderTraversal(
+		node?: TreeNode<T> | null
+	): Generator<TreeNode<T> | null> {
 		node ??= this._root;
 		if (node?.children.length) {
-			for (let child of node.children) {
+			for (const child of node.children) {
 				yield* this.postOrderTraversal(child);
 			}
 		}
@@ -67,24 +72,28 @@ export class Tree<T> {
 
 	find(key: string): TreeNode<T> | null {
 		if (!key) new Error(`Missing key.`);
-		for (let node of this.preOrderTraversal()) {
-			if (node.key === key) return node;
+		for (const node of this.preOrderTraversal()) {
+			if (node?.key === key) return node;
 		}
 		return null;
 	}
 
-	findBy(valueOrPropValue: any, propName: string | null = null) {
-		for (let node of this.preOrderTraversal()) {
+	findBy(
+		valueOrPropValue: any,
+		propName: string | null = null
+	): TreeNode<T> | null {
+		for (const node of this.preOrderTraversal()) {
+			if (!node) return null;
 			// search by prop + value
-			if (
+			else if (
 				propName &&
-				node.value[propName] !== undefined &&
-				node.value[propName] === valueOrPropValue
+				(node as any)?.value[propName] !== undefined &&
+				(node as any)?.value[propName] === valueOrPropValue
 			) {
 				return node;
 			}
 			// search by value only
-			else if (!propName && node.value === valueOrPropValue) {
+			else if (!propName && node?.value === valueOrPropValue) {
 				return node;
 			}
 		}
@@ -101,17 +110,21 @@ export class Tree<T> {
 		const n2 = this.find(node2Key);
 
 		// some not found? -> no lca
-		if (!n1 || !n2) throw new Error(`Node "${node1Key}" and/or "${node2Key}" not found.`);
+		if (!n1 || !n2)
+			throw new Error(`Node "${node1Key}" and/or "${node2Key}" not found.`);
 
 		// same nodes? -> lca
 		if (n1 === n2) return n1;
 
 		// create a lookup map of hierarchy nodes from one path
-		const map1 = n1.path.reduce((m, n) => ({ ...m, [n.key]: n }), {});
+		const map1: Record<string, TreeNode<T>> = n1.path.reduce(
+			(m, n) => ({ ...m, [n.key]: n }),
+			{}
+		);
 
 		// now traverse the other (path is sorted top-down) and return the lowest match
 		let lca = this._root;
-		for (let n of n2.path) {
+		for (const n of n2.path) {
 			if (!map1[n.key]) return lca;
 			lca = map1[n.key];
 		}
@@ -120,7 +133,7 @@ export class Tree<T> {
 		return lca;
 	}
 
-	insert(parentNodeKey: string, value: T) {
+	insert(parentNodeKey: string, value: T): TreeNode<T> {
 		const node = this.find(parentNodeKey);
 		if (node) {
 			return node.appendChild(value).__setReadonly(this._readonly);
@@ -128,7 +141,7 @@ export class Tree<T> {
 		throw new Error(`Node "${parentNodeKey}" not found.`);
 	}
 
-	remove(key: string) {
+	remove(key: string): Tree<T> {
 		if (!key) new Error(`Missing key.`);
 
 		if (this._root?.key === key) {
@@ -136,8 +149,8 @@ export class Tree<T> {
 			return this;
 		}
 
-		for (let node of this.preOrderTraversal()) {
-			if (node.key === key && node.parent.removeChild(key)) {
+		for (const node of this.preOrderTraversal()) {
+			if (node?.key === key && node?.parent?.removeChild(key)) {
 				return this;
 			}
 		}
@@ -145,7 +158,11 @@ export class Tree<T> {
 		throw new Error(`Node "${key}" not found.`);
 	}
 
-	protected _moveOrCopy(srcNodeKey: string, targetNodeKey: string, isMove: boolean) {
+	protected _moveOrCopy(
+		srcNodeKey: string,
+		targetNodeKey: string,
+		isMove: boolean
+	) {
 		const src = this.find(srcNodeKey);
 		if (!src) throw new Error(`Source node "${srcNodeKey}" not found.`);
 
@@ -176,28 +193,31 @@ export class Tree<T> {
 		}
 	}
 
-	move(srcNodeKey: string, targetNodeKey: string) {
+	move(srcNodeKey: string, targetNodeKey: string): TreeNode<T> {
 		return this._moveOrCopy(srcNodeKey, targetNodeKey, true);
 	}
 
-	copy(srcNodeKey: string, targetNodeKey: string) {
+	copy(srcNodeKey: string, targetNodeKey: string): TreeNode<T> {
 		return this._moveOrCopy(srcNodeKey, targetNodeKey, false);
 	}
 
-	toJSON() {
+	toJSON(): TreeNodeDTO<T> | undefined {
 		return this._root?.toJSON();
 	}
 
-	dump() {
+	dump(): string {
 		return JSON.stringify(this);
 	}
 
-	restore(dump: string | TreeNodeDTO<T>) {
+	restore(dump: string | TreeNodeDTO<T>): Tree<T> {
 		let parsed: TreeNodeDTO<T> = dump as any;
-		if (typeof dump === 'string') parsed = JSON.parse(dump);
+		if (typeof dump === "string") parsed = JSON.parse(dump);
 
-		const _walk = (children: TreeNodeDTO<T>['children'], parent: TreeNode<T>) => {
-			for (let child of children) {
+		const _walk = (
+			children: TreeNodeDTO<T>["children"],
+			parent: TreeNode<T>
+		) => {
+			for (const child of children) {
 				const node = parent
 					.appendChild(child.value, false)
 					.__setTree(this)
@@ -206,36 +226,44 @@ export class Tree<T> {
 			}
 		};
 
-		const root = new TreeNode(parsed.value).__setTree(this).__setKey(parsed.key);
+		const root = new TreeNode(parsed.value)
+			.__setTree(this)
+			.__setKey(parsed.key);
 		_walk(parsed.children, root);
 
 		// walk again - cannot do that above, as it would disable adding children
 		if (this._readonly) {
-			[...this.postOrderTraversal()].map((n) => n?.__setReadonly(this._readonly));
+			[...this.postOrderTraversal()].map((n) =>
+				n?.__setReadonly(this._readonly)
+			);
 		}
 
 		this._root = root;
 		return this;
 	}
 
-	size(from?: TreeNode<T> | null) {
+	size(from?: TreeNode<T> | null): number {
 		from ??= this._root;
 		if (!from) return 0;
 		const len = [...this.preOrderTraversal(from)].length;
 
 		// special case length === 1 suspicion
-		if (from !== this._root && len === 1 && !this.contains(from?.key as string)) {
+		if (
+			from !== this._root &&
+			len === 1 &&
+			!this.contains(from?.key as string)
+		) {
 			return 0;
 		}
 
 		return len;
 	}
 
-	contains(key: string) {
+	contains(key: string): boolean {
 		return !!this._root?.contains(key);
 	}
 
-	toString() {
-		return [...this.preOrderTraversal()].map((n) => n?.toString()).join('\n');
+	toString(): string {
+		return [...this.preOrderTraversal()].map((n) => n?.toString()).join("\n");
 	}
 }

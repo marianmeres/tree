@@ -4,9 +4,11 @@ Base [tree](<https://en.wikipedia.org/wiki/Tree_(data_structure)>) class providi
 common traversal, lookup and node manipulation operations.
 
 ## Install
-
-```shell
-$ npm i @marianmeres/tree
+```sh
+deno add jsr:@marianmeres/tree
+```
+```sh
+npm install @marianmeres/tree
 ```
 
 ## Example usage
@@ -134,6 +136,6 @@ assert(AAAB.moveSiblingIndex(0).siblingIndex === 0);
 // tree can be marked as readonly where ALL modifying operations fail, e.g.
 const t = Tree.factory<string>(dump, true);
 assert(t.readonly);
-assert.throws(() => t.appendChild('foo'));
+assertThrows(() => t.appendChild('foo'));
 // ...
 ```

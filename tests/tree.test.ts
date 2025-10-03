@@ -1,13 +1,6 @@
-import { createClog } from '@marianmeres/clog';
-import { TestRunner } from '@marianmeres/test-runner';
-import { strict as assert } from 'node:assert';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { Tree, TreeNode } from '../src/index.js';
-
-const clog = createClog(path.basename(fileURLToPath(import.meta.url)));
-const suite = new TestRunner(path.basename(fileURLToPath(import.meta.url)));
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+import { TreeNode } from "../src/tree/tree-node.ts";
+import { Tree } from "../src/tree/tree.ts";
+import { assert, assertEquals, assertThrows } from "@std/assert";
 
 // https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Sorted_binary_tree_ALL_RGB.svg/586px-Sorted_binary_tree_ALL_RGB.svg.png
 const _createTree = (readonly = false) => {
@@ -22,15 +15,15 @@ const _createTree = (readonly = false) => {
 	// FBADCEGIH - pre order
 	// ACEDBHIGF - post order
 
-	const f = new TreeNode('F');
-	const b = f.appendChild('B');
-	const g = f.appendChild('G');
-	const a = b.appendChild('A');
-	const d = b.appendChild('D');
-	const c = d.appendChild('C');
-	const e = d.appendChild('E');
-	const i = g.appendChild('I');
-	const h = i.appendChild('H');
+	const f = new TreeNode("F");
+	const b = f.appendChild("B");
+	const g = f.appendChild("G");
+	const a = b.appendChild("A");
+	const d = b.appendChild("D");
+	const c = d.appendChild("C");
+	const e = d.appendChild("E");
+	const i = g.appendChild("I");
+	const h = i.appendChild("H");
 
 	const tree = new Tree<string>(f, readonly);
 
@@ -54,9 +47,9 @@ const _createTree = (readonly = false) => {
 	};
 };
 
-suite.test('node sanity check', () => {
-	const n = new TreeNode('a');
-	assert(n.value === 'a');
+Deno.test("node sanity check", () => {
+	const n = new TreeNode("a");
+	assert(n.value === "a");
 	assert(n.isRoot);
 	assert(n.isLeaf);
 	assert(n.depth === 0);
@@ -64,23 +57,23 @@ suite.test('node sanity check', () => {
 	// tree must not exists
 	assert(!n.tree);
 
-	const n2 = new TreeNode({ foo: 'bar' });
-	assert(n2.value.foo === 'bar');
+	const n2 = new TreeNode({ foo: "bar" });
+	assert(n2.value.foo === "bar");
 
 	// keys exists but are not equal
 	assert(n.key && n2.key && n.key !== n2.key);
 
 	// append child
-	const b = n.appendChild('b');
-	assert(b.value === 'b');
-	assert(n.children[0].value === 'b');
+	const b = n.appendChild("b");
+	assert(b.value === "b");
+	assert(n.children[0].value === "b");
 	assert(b.depth === 1);
 	assert(!b.isRoot);
 	assert(n.children.length === 1);
 
 	// replace child
-	const c = n.replaceChild(b.key, 'c') as TreeNode<string>;
-	assert(n.children[0].value === ('c' as any));
+	const c = n.replaceChild(b.key, "c") as TreeNode<string>;
+	assert(n.children[0].value === ("c" as any));
 	assert(n.children.length === 1);
 
 	// remove child
@@ -88,10 +81,10 @@ suite.test('node sanity check', () => {
 	assert(!n.children.length);
 
 	// remove non existing child throws
-	assert.throws(() => !n.removeChild('foo'));
+	assertThrows(() => !n.removeChild("foo"));
 });
 
-suite.test('tree sanity check', () => {
+Deno.test("tree sanity check", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 
 	assert(f.tree && i.tree && f.tree === i.tree);
@@ -104,22 +97,26 @@ suite.test('tree sanity check', () => {
 	assert(t.find(h.key)?.key === h.key);
 
 	// find by value
-	assert(t.findBy('D').key === d.key);
-	assert(t.findBy('H').key === h.key);
+	assert(t.findBy("D")?.key === d.key);
+	assert(t.findBy("H")?.key === h.key);
 
 	// sibling index check
-	assert(t.findBy('B').siblingIndex === 0);
-	assert(t.findBy('G').siblingIndex === 1);
-	assert(t.findBy('E').siblingIndex === 1);
+	assert(t.findBy("B")?.siblingIndex === 0);
+	assert(t.findBy("G")?.siblingIndex === 1);
+	assert(t.findBy("E")?.siblingIndex === 1);
 });
 
-suite.test('pre/post order traversal', () => {
+Deno.test("pre/post order traversal", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
-	assert([...t.preOrderTraversal()].map((n) => n?.value).join('') === 'FBADCEGIH');
-	assert([...t.postOrderTraversal()].map((n) => n?.value).join('') === 'ACEDBHIGF');
+	assert(
+		[...t.preOrderTraversal()].map((n) => n?.value).join("") === "FBADCEGIH"
+	);
+	assert(
+		[...t.postOrderTraversal()].map((n) => n?.value).join("") === "ACEDBHIGF"
+	);
 });
 
-suite.test('tree.toJSON', () => {
+Deno.test("tree.toJSON", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 	// shallow compare - must not be same instance
 	assert(t.toJSON() !== t.toJSON());
@@ -129,12 +126,12 @@ suite.test('tree.toJSON', () => {
 	assert(t.toJSON()?.children === t.toJSON()?.children);
 });
 
-suite.test('dump, restore', () => {
+Deno.test("dump, restore", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 
 	// clog(JSON.stringify(t.toJSON(), null, 3));
 	const dump = t.dump();
-	assert(typeof dump === 'string');
+	assert(typeof dump === "string");
 
 	// restored from string (usual case)
 	const restored = new Tree(null);
@@ -154,7 +151,7 @@ suite.test('dump, restore', () => {
 	assert(restored2?.root?.tree === restored2);
 });
 
-suite.test('remove', () => {
+Deno.test("remove", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 	//            F
 	//        /     \
@@ -183,27 +180,27 @@ suite.test('remove', () => {
         A`);
 
 	// remove root
-	t.remove(t.findBy('F')?.key);
-	assert(t.toString() === '');
+	t.remove(t.findBy("F")?.key!);
+	assert(t.toString() === "");
 });
 
-suite.test('insert', () => {
+Deno.test("insert", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 
-	t.insert(i.key, 'X');
+	t.insert(i.key, "X");
 	assert(t.toString() === `${expected}\n            X`);
 
-	t.insert(d.key, 'Y');
-	assert(t.toString().includes('\n            E\n            Y\n    G'));
+	t.insert(d.key, "Y");
+	assert(t.toString().includes("\n            E\n            Y\n    G"));
 });
 
-suite.test('contains', () => {
+Deno.test("contains", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 
 	// root
 	assert(t.contains(h.key));
 	assert(f.contains(a.key));
-	assert(!t.contains('foo'));
+	assert(!t.contains("foo"));
 
 	// sub tree
 	assert(d.contains(c.key));
@@ -218,7 +215,7 @@ suite.test('contains', () => {
 	assert(!d.contains(d.key));
 });
 
-suite.test('move', () => {
+Deno.test("move", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 	//            F
 	//        /     \
@@ -244,27 +241,27 @@ suite.test('move', () => {
             E`);
 });
 
-suite.test('move to self', () => {
+Deno.test("move to self", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
-	assert.throws(() => t.move(g.key, g.key));
+	assertThrows(() => t.move(g.key, g.key));
 	assert(t.toString() === expected); // no change
 });
 
-suite.test('move to same parent', () => {
+Deno.test("move to same parent", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
-	// assert.throws(() => !t.move(g.key, f.key));
+	// assertThrows(() => !t.move(g.key, f.key));
 	// this is a noop
 	assert(t.move(g.key, f.key) === g);
 	assert(t.toString() === expected); // no change
 });
 
-suite.test('move down the path', () => {
+Deno.test("move down the path", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
-	assert.throws(() => !t.move(g.key, h.key));
+	assertThrows(() => !t.move(g.key, h.key));
 	assert(t.toString() === expected); // no change
 });
 
-suite.test('move up the path', () => {
+Deno.test("move up the path", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 	//            F
 	//        /     \
@@ -289,7 +286,7 @@ suite.test('move up the path', () => {
         H`);
 });
 
-suite.test('clone', () => {
+Deno.test("clone", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 
 	const clone = g.deepClone();
@@ -300,14 +297,16 @@ suite.test('clone', () => {
 	assert(g.children[0].value === clone.children[0].value); // i
 	assert(g.children[0].key !== clone.children[0].key); // i
 
-	assert(g.children[0].children[0].value === clone.children[0].children[0].value); // h
+	assert(
+		g.children[0].children[0].value === clone.children[0].children[0].value
+	); // h
 	assert(g.children[0].children[0].key !== clone.children[0].children[0].key); // h
 
 	// clog(JSON.stringify(g.toJSON(), null, 3));
 	// clog(JSON.stringify(g.deepClone().toJSON(), null, 3));
 });
 
-suite.test('copy', () => {
+Deno.test("copy", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 	//            F
 	//        /     \
@@ -335,7 +334,7 @@ suite.test('copy', () => {
             H`);
 });
 
-suite.test('copy to self', () => {
+Deno.test("copy to self", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 	t.copy(g.key, g.key);
 	// clog(t.toString());
@@ -355,7 +354,7 @@ suite.test('copy to self', () => {
                 H`);
 });
 
-suite.test('copy to same parent', () => {
+Deno.test("copy to same parent", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 	t.copy(i.key, g.key);
 	// clog(t.toString());
@@ -374,7 +373,7 @@ suite.test('copy to same parent', () => {
             H`);
 });
 
-suite.test('copy down the path', () => {
+Deno.test("copy down the path", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 	//            F
 	//        /     \
@@ -402,16 +401,16 @@ suite.test('copy down the path', () => {
                         H`);
 });
 
-suite.test('siblings', () => {
+Deno.test("siblings", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 
-	assert(c.nextSibling()?.value === 'E');
-	assert(g.previousSibling()?.value === 'B');
+	assert(c.nextSibling()?.value === "E");
+	assert(g.previousSibling()?.value === "B");
 
 	// move sibling index
-	const x = f.appendChild('X');
-	f.appendChild('Y');
-	f.appendChild('Z');
+	const x = f.appendChild("X");
+	f.appendChild("Y");
+	f.appendChild("Z");
 	// clog('\n' + t.toString());
 
 	// move to start
@@ -434,7 +433,7 @@ suite.test('siblings', () => {
 	// clog('\n' + t.toString());
 });
 
-suite.test('lca', () => {
+Deno.test("lca", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 	//            F
 	//        /     \
@@ -449,11 +448,11 @@ suite.test('lca', () => {
 	assert(t.findLCA(a.key, h.key) === f);
 	assert(t.findLCA(f.key, f.key) === f);
 	assert(t.findLCA(c.key, e.key) === d);
-	assert.throws(() => t.findLCA('foo', f.key) === null);
-	assert.throws(() => t.findLCA('foo', 'bar') === null);
+	assertThrows(() => t.findLCA("foo", f.key) === null);
+	assertThrows(() => t.findLCA("foo", "bar") === null);
 });
 
-suite.test('size', () => {
+Deno.test("size", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree();
 
 	assert(new Tree().size() === 0);
@@ -463,10 +462,10 @@ suite.test('size', () => {
 	assert(t.size(d) === 3);
 	assert(t.size(i) === 2);
 	assert(t.size(h) === 1);
-	assert(t.size(new TreeNode('foo')) === 0);
+	assert(t.size(new TreeNode("foo")) === 0);
 });
 
-suite.test('readonly', () => {
+Deno.test("readonly", () => {
 	let { tree: t, expected, a, b, c, d, e, f, g, h, i } = _createTree(true);
 
 	assert(t.readonly);
@@ -475,18 +474,18 @@ suite.test('readonly', () => {
 	// each node must be marked as readonly as well
 	[a, b, c, d, e, f, g, h, i].forEach((n) => {
 		assert(n.readonly, `${n.value} is not readonly`);
-		assert.throws(() => n.appendChild('a'), `${n.value} appendChild`);
-		assert.throws(() => n.removeChild('a'), `${n.value} removeChild`);
-		assert.throws(() => n.replaceChild('a', 'd'), `${n.value} replaceChild`);
-		assert.throws(() => n.resetChildren(), `${n.value} resetChildren`);
-		assert.throws(() => n.moveSiblingIndex(1), `${n.value} moveSiblingIndex`);
+		assertThrows(() => n.appendChild("a"), `${n.value} appendChild`);
+		assertThrows(() => n.removeChild("a"), `${n.value} removeChild`);
+		assertThrows(() => n.replaceChild("a", "d"), `${n.value} replaceChild`);
+		assertThrows(() => n.resetChildren(), `${n.value} resetChildren`);
+		assertThrows(() => n.moveSiblingIndex(1), `${n.value} moveSiblingIndex`);
 	});
 
-	assert.throws(() => t.appendChild('foo'));
-	assert.throws(() => t.insert(d.key, 'foo'));
-	assert.throws(() => t.remove(d.key));
-	assert.throws(() => t.move(i.key, b.key));
-	assert.throws(() => t.copy(i.key, b.key));
+	assertThrows(() => t.appendChild("foo"));
+	assertThrows(() => t.insert(d.key, "foo"));
+	assertThrows(() => t.remove(d.key));
+	assertThrows(() => t.move(i.key, b.key));
+	assertThrows(() => t.copy(i.key, b.key));
 
 	// must work via factory param as well
 	const t2 = Tree.factory<string>(_createTree().tree.dump(), true);
@@ -494,7 +493,7 @@ suite.test('readonly', () => {
 	assert(t2.toString() === expected);
 });
 
-suite.test('readme example', () => {
+Deno.test("readme example", () => {
 	const tree = new Tree<string>();
 
 	// no root node was provided yet, so the tree is zero in size
@@ -504,21 +503,21 @@ suite.test('readme example', () => {
 	// add some nodes
 
 	// "A" below will become "root" as it is the first child (the tree must have exactly 1 root)
-	const A = tree.appendChild('A');
+	const A = tree.appendChild("A");
 	assert(tree.root === A);
 
-	const AA = tree.appendChild('AA');
-	const AB = tree.appendChild('AB');
+	const AA = tree.appendChild("AA");
+	const AB = tree.appendChild("AB");
 
 	// now we're appeding to nodes directy
-	const AAA = AA.appendChild('AAA');
-	const AAB = AA.appendChild('AAB');
-	const ABA = AB.appendChild('ABA');
-	const ABB = AB.appendChild('ABB');
+	const AAA = AA.appendChild("AAA");
+	const AAB = AA.appendChild("AAB");
+	const ABA = AB.appendChild("ABA");
+	const ABB = AB.appendChild("ABB");
 
 	// there is also `tree.insert` method, which works similar (we can specify the parent node)
-	const AAAA = tree.insert(AAA.key, 'AAAA');
-	const AAAB = tree.insert(AAA.key, 'AAAB');
+	const AAAA = tree.insert(AAA.key, "AAAA");
+	const AAAB = tree.insert(AAA.key, "AAAB");
 	// const AAAA = AAA.appendChild('AAAA'); // same effect as above
 	// const AAAB = AAA.appendChild('AAAB');
 
@@ -549,7 +548,7 @@ A
 	// lookups
 	// @ts-ignore
 	assert(tree.find(A.key) === A);
-	assert(tree.findBy('AB') === AB);
+	assert(tree.findBy("AB") === AB);
 	// tree.findBy(propertyValue, propertyName) if the values were objects
 
 	// contains lookup
@@ -558,7 +557,7 @@ A
 
 	// the tree is fully serializable
 	const dump = tree.dump();
-	assert(typeof dump === 'string');
+	assert(typeof dump === "string");
 	// const restored = new Tree().restore(dump);
 	const restored = Tree.factory<string>(dump);
 	assert(tree.toString() === restored.toString());
@@ -596,5 +595,3 @@ A
 
 	// and more...
 });
-
-export default suite;
