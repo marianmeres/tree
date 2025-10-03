@@ -101,8 +101,12 @@ export class Tree<T> {
 	/** Searches nodes by given value or prop+value pair  */
 	findBy(
 		valueOrPropValue: any,
-		propName: string | null = null
+		propName: string | null = null,
+		valueCompareEqualFn?: (a: T, b: T) => boolean
 	): TreeNode<T> | null {
+		// strict compare by default
+		valueCompareEqualFn ??= (a: T, b: T) => a === b;
+
 		for (const node of this.preOrderTraversal()) {
 			if (!node) return null;
 			// search by prop + value
@@ -114,7 +118,10 @@ export class Tree<T> {
 				return node;
 			}
 			// search by value only
-			else if (!propName && node?.value === valueOrPropValue) {
+			else if (
+				!propName &&
+				valueCompareEqualFn(node?.value, valueOrPropValue)
+			) {
 				return node;
 			}
 		}

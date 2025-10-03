@@ -324,15 +324,19 @@ export class TreeNode<T> {
 
 	/** Returns boolean whether the provided value exists within children.
 	 * Looks down to the maxDepth level (if non-zero, otherwise no limit). */
-	has(value: T, maxDepth = 0, compareFn?: (a: T, b: T) => boolean): boolean {
+	has(
+		value: T,
+		maxDepth = 0,
+		valueCompareEqualFn?: (a: T, b: T) => boolean
+	): boolean {
 		// strict compare by default
-		compareFn ??= (a: T, b: T) => a === b;
+		valueCompareEqualFn ??= (a: T, b: T) => a === b;
 
 		const _walk = (children: TreeNode<T>[], depth: number) => {
 			if (maxDepth > 0 && ++depth > maxDepth) return false;
 			for (const child of children) {
 				// console.log(child.value, value);
-				if (compareFn(child.value, value)) return true;
+				if (valueCompareEqualFn(child.value, value)) return true;
 				if (_walk(child.children, depth)) return true;
 			}
 			return false;
@@ -340,6 +344,8 @@ export class TreeNode<T> {
 
 		return _walk(this._children, 0);
 	}
+
+	get() {}
 
 	/** Returns string representation (for debugging purposes) */
 	toString(): string {
