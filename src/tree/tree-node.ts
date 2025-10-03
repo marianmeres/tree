@@ -90,7 +90,7 @@ export class TreeNode<T> {
 		return _lastNotEmpty;
 	}
 
-	/** Returns array of nodes as a ancestors hierarchy path (self included) */
+	/** Returns array of nodes as a ancestors hierarchy path (self NOT included) */
 	get path(): TreeNode<T>[] {
 		let parent = this._parent;
 		const path: TreeNode<T>[] = [];
