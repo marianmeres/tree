@@ -1,21 +1,34 @@
 import type { Tree } from "./tree.ts";
 
-/** Tree node data transfer object */
+/**
+ * Tree node data transfer object for serialization.
+ */
 export interface TreeNodeDTO<T> {
 	id: string;
 	value: T;
 	children: TreeNodeDTO<T>[];
 }
 
-/** The the node abstraction class */
+/**
+ * The tree node class representing a single node in the tree structure.
+ * Each node has a unique id, a value, references to parent/children, and various utility methods.
+ * @template T The type of value stored in the node
+ */
 export class TreeNode<T> {
 	protected _id: string;
 	protected _children: TreeNode<T>[] = [];
 	protected _readonly: boolean = false;
 
-	/** Returns random id (prefixed with "n" so it will be safe to use as html el id) */
+	/**
+	 * Generates a random 8-character id prefixed with "n" (safe for HTML element ids).
+	 * @returns A random id string
+	 */
 	static createId(): string {
-		return "n" + Math.random().toString(36).slice(2, 10);
+		return (
+			"n" +
+			Math.random().toString(36).slice(2) +
+			Math.random().toString(36).slice(2)
+		);
 	}
 
 	constructor(
@@ -31,31 +44,50 @@ export class TreeNode<T> {
 	// internally)... this is a consciously pragmatic decision (yet somewhat ugly from the
 	// OO design point of view)
 
-	/** Sets the "id" of the node */
+	/**
+	 * Sets the id of the node (internal use only).
+	 * @param id The new id
+	 * @returns This node instance for chaining
+	 */
 	__setId(id: string): TreeNode<T> {
 		this._id = id;
 		return this;
 	}
 
-	/** Sets the parent of the node */
+	/**
+	 * Sets the parent of the node (internal use only).
+	 * @param parent The new parent node or null
+	 * @returns This node instance for chaining
+	 */
 	__setParent(parent: TreeNode<T> | null): TreeNode<T> {
 		this._parent = parent;
 		return this;
 	}
 
-	/** Sets the tree reference of the node */
+	/**
+	 * Sets the tree reference of the node (internal use only).
+	 * @param tree The tree instance or null
+	 * @returns This node instance for chaining
+	 */
 	__setTree(tree: Tree<T> | null): TreeNode<T> {
 		this.tree = tree;
 		return this;
 	}
 
-	/** Sets the readonly reference of the node */
+	/**
+	 * Sets the readonly flag of the node (internal use only).
+	 * @param flag Whether to mark as readonly
+	 * @returns This node instance for chaining
+	 */
 	__setReadonly(flag: boolean = true): TreeNode<T> {
 		this._readonly = flag;
 		return this;
 	}
 
-	/** Will traverse downwards and set proper parent (used in node move/copy/append) */
+	/**
+	 * Synchronizes children references (parent, tree, readonly) recursively (internal use only).
+	 * Used during node move/copy/append operations.
+	 */
 	__syncChildren(): void {
 		const _walk = (children: TreeNode<T>[], parent: TreeNode<T> | null) => {
 			for (const child of children) {
@@ -69,17 +101,27 @@ export class TreeNode<T> {
 		return _walk(this._children, this);
 	}
 
-	/** Gets the depth of the node */
+	/**
+	 * Gets the depth (level) of the node in the tree.
+	 * Root node has depth 0, its children have depth 1, etc.
+	 * @returns The depth level
+	 */
 	get depth(): number {
 		return this.path.length;
 	}
 
-	/** Gets the readonly flag of the node */
+	/**
+	 * Gets the readonly flag of the node.
+	 * @returns True if readonly, false otherwise
+	 */
 	get readonly(): boolean {
 		return this._readonly;
 	}
 
-	/** Gets the root node of the node */
+	/**
+	 * Gets the root node of the tree this node belongs to.
+	 * @returns The root node or null if this is a standalone node
+	 */
 	get root(): TreeNode<T> | null {
 		let parent = this._parent;
 		let _lastNotEmpty = parent;
@@ -90,7 +132,11 @@ export class TreeNode<T> {
 		return _lastNotEmpty;
 	}
 
-	/** Returns array of nodes as a ancestors hierarchy path (self NOT included) */
+	/**
+	 * Returns array of ancestor nodes from root to parent (self NOT included).
+	 * The path is ordered top-down (root first, immediate parent last).
+	 * @returns Array of ancestor TreeNode instances
+	 */
 	get path(): TreeNode<T>[] {
 		let parent = this._parent;
 		const path: TreeNode<T>[] = [];
@@ -102,37 +148,58 @@ export class TreeNode<T> {
 		return path;
 	}
 
-	/** Gets the node id */
+	/**
+	 * Gets the unique id of the node.
+	 * @returns The node id
+	 */
 	get id(): string {
 		return this._id;
 	}
 
-	/** Gets the node parent */
+	/**
+	 * Gets the parent node.
+	 * @returns The parent node or null if this is root
+	 */
 	get parent(): TreeNode<T> | null {
 		return this._parent;
 	}
 
-	/** Gets the node's array of child nodes */
+	/**
+	 * Gets the array of direct child nodes.
+	 * @returns Array of child TreeNode instances
+	 */
 	get children(): TreeNode<T>[] {
 		return this._children;
 	}
 
-	/** Returns boolean whether the node is a leaf */
+	/**
+	 * Checks if the node is a leaf (has no children).
+	 * @returns True if leaf node, false otherwise
+	 */
 	get isLeaf(): boolean {
 		return this._children.length === 0;
 	}
 
-	/** Returns boolean whether the node is a root node */
+	/**
+	 * Checks if the node is the root node (has no parent).
+	 * @returns True if root node, false otherwise
+	 */
 	get isRoot(): boolean {
 		return this._parent === null;
 	}
 
-	/** Returns the node's array of sibling nodes*/
+	/**
+	 * Gets the array of sibling nodes (nodes sharing the same parent).
+	 * @returns Array of sibling TreeNode instances (includes self)
+	 */
 	get siblings(): TreeNode<T>[] {
 		return this._parent?.children || [];
 	}
 
-	/** Returns the node's index in the array of sibling nodes */
+	/**
+	 * Gets the index of this node within its siblings array.
+	 * @returns The sibling index, or -1 if no siblings
+	 */
 	get siblingIndex(): number {
 		if (this.siblings.length) {
 			return this.siblings.findIndex((n) => n.id === this._id);
@@ -170,12 +237,19 @@ export class TreeNode<T> {
 		}
 	}
 
-	/** Returns the data representation of the node */
+	/**
+	 * Returns the data representation of the node for serialization.
+	 * @returns TreeNodeDTO object
+	 */
 	toJSON(): TreeNodeDTO<T> {
 		return { id: this._id, value: this.value, children: this._children };
 	}
 
-	/** Deep clones current node (with new id) */
+	/**
+	 * Creates a deep clone of this node and its entire subtree.
+	 * All nodes in the clone will have new unique ids.
+	 * @returns A new TreeNode instance that is a deep copy
+	 */
 	deepClone(): TreeNode<T> {
 		// quick-n-dirty
 		const dto: TreeNodeDTO<T> = JSON.parse(
@@ -203,7 +277,13 @@ export class TreeNode<T> {
 		return clone;
 	}
 
-	/** Appends node to the children array */
+	/**
+	 * Appends a new child node to this node's children.
+	 * @param valueOrNode Value or TreeNode instance to append
+	 * @param _sync Whether to sync children references (internal parameter)
+	 * @returns The newly appended TreeNode
+	 * @throws Error if node is readonly or other validation fails
+	 */
 	appendChild(valueOrNode: T | TreeNode<T>, _sync = true): TreeNode<T> {
 		this._assertNotReadonly();
 		this._assertSameTopRootNode(valueOrNode as any);
@@ -222,7 +302,12 @@ export class TreeNode<T> {
 		return child;
 	}
 
-	/** Removes node by id */
+	/**
+	 * Removes a child node by its id.
+	 * @param id The id of the child node to remove
+	 * @returns This node instance for chaining
+	 * @throws Error if node is readonly or child not found
+	 */
 	removeChild(id: string): TreeNode<T> {
 		this._assertNotReadonly();
 		const idx = this._children.findIndex((n) => n.id === id);
@@ -232,7 +317,13 @@ export class TreeNode<T> {
 		return this;
 	}
 
-	/** Replaces node (identified by id) with the one provided */
+	/**
+	 * Replaces a child node with a new node.
+	 * @param id The id of the child node to replace
+	 * @param valueOrNode Value or TreeNode instance to replace with
+	 * @returns The newly replaced TreeNode, or false on failure
+	 * @throws Error if node is readonly, child not found, or validation fails
+	 */
 	replaceChild(id: string, valueOrNode: T | TreeNode<T>): TreeNode<T> | false {
 		this._assertNotReadonly();
 		this._assertSameTopRootNode(valueOrNode as any);
@@ -251,7 +342,12 @@ export class TreeNode<T> {
 		return this._children[idx];
 	}
 
-	/** Empties existing and adds provided children */
+	/**
+	 * Removes all existing children and replaces them with new ones.
+	 * @param valuesOrNodes Array of values or TreeNode instances
+	 * @returns This node instance for chaining
+	 * @throws Error if node is readonly
+	 */
 	resetChildren(valuesOrNodes: (T | TreeNode<T>)[] = []): TreeNode<T> {
 		this._assertNotReadonly();
 		this._children = [];
@@ -260,7 +356,10 @@ export class TreeNode<T> {
 		return this;
 	}
 
-	/** Returns previous sibling (relative from self) */
+	/**
+	 * Gets the previous sibling node (to the left in the siblings array).
+	 * @returns The previous sibling or null if this is the first sibling
+	 */
 	previousSibling(): TreeNode<T> | null {
 		if (this.siblings.length) {
 			const selfIdx = this.siblings.findIndex((n) => n.id === this._id);
@@ -269,7 +368,10 @@ export class TreeNode<T> {
 		return null;
 	}
 
-	/** Returns next sibling (relative from self) */
+	/**
+	 * Gets the next sibling node (to the right in the siblings array).
+	 * @returns The next sibling or null if this is the last sibling
+	 */
 	nextSibling(): TreeNode<T> | null {
 		if (this.siblings.length) {
 			const selfIdx = this.siblings.findIndex((n) => n.id === this._id);
@@ -278,7 +380,12 @@ export class TreeNode<T> {
 		return null;
 	}
 
-	/** Moves self to another sibling index */
+	/**
+	 * Moves this node to a different position within its siblings array.
+	 * @param toIndex Target index position (supports negative indices from end)
+	 * @returns This node instance for chaining
+	 * @throws Error if node is readonly
+	 */
 	moveSiblingIndex(toIndex: number): TreeNode<T> {
 		this._assertNotReadonly();
 		const fromIndex = this.siblingIndex;
@@ -302,8 +409,13 @@ export class TreeNode<T> {
 		return this;
 	}
 
-	/** Returns boolean whether the provided id exists within children.
-	 * Looks down to the maxDepth level (if non-zero, otherwise no limit). */
+	/**
+	 * Checks if a node with the given id exists within this node's descendants.
+	 * @param id The node id to search for
+	 * @param maxDepth Maximum depth to search (0 = unlimited)
+	 * @returns True if found, false otherwise
+	 * @throws Error if id is empty
+	 */
 	contains(id: string, maxDepth = 0): boolean {
 		if (!id) throw new Error(`Missing id`);
 
@@ -322,8 +434,13 @@ export class TreeNode<T> {
 		return _walk(this._children, 0);
 	}
 
-	/** Returns boolean whether the provided value exists within children.
-	 * Looks down to the maxDepth level (if non-zero, otherwise no limit). */
+	/**
+	 * Checks if a node with the given value exists within this node's descendants.
+	 * @param value The value to search for
+	 * @param maxDepth Maximum depth to search (0 = unlimited)
+	 * @param valueCompareEqualFn Optional custom comparison function
+	 * @returns True if found, false otherwise
+	 */
 	has(
 		value: T,
 		maxDepth = 0,
@@ -345,7 +462,13 @@ export class TreeNode<T> {
 		return _walk(this._children, 0);
 	}
 
-	/** Checks if current node either equals value or prop+value pair */
+	/**
+	 * Checks if this node matches a value or property+value pair.
+	 * @param valueOrPropValue The value to match, or property value if propName is specified
+	 * @param propName Optional property name to match within node value
+	 * @param valueCompareEqualFn Optional custom comparison function
+	 * @returns This node if matches, null otherwise
+	 */
 	matches(
 		valueOrPropValue: any,
 		propName: string | null = null,
@@ -368,7 +491,14 @@ export class TreeNode<T> {
 		return null;
 	}
 
-	/** Searches all nodes (self + children) by given value or prop+value pair */
+	/**
+	 * Searches all nodes (self + descendants) by value or property+value pair.
+	 * @param valueOrPropValue The value to search for, or property value if propName is specified
+	 * @param propName Optional property name to search within node values
+	 * @param maxDepth Maximum depth to search (0 = unlimited)
+	 * @param valueCompareEqualFn Optional custom comparison function
+	 * @returns Array of matching TreeNode instances
+	 */
 	findAllBy(
 		valueOrPropValue: any,
 		propName: string | null = null,
@@ -402,7 +532,11 @@ export class TreeNode<T> {
 		return _walk(this._children, 0, results);
 	}
 
-	/** Returns string representation (for debugging purposes) */
+	/**
+	 * Returns string representation of this node (for debugging purposes).
+	 * Shows indentation based on depth and the node's value.
+	 * @returns String representation
+	 */
 	toString(): string {
 		let s = this.value?.toString();
 		if (s === "[object Object]") s = this.id;

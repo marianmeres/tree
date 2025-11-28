@@ -1,6 +1,11 @@
 import { TreeNode, type TreeNodeDTO } from "./tree-node.ts";
 
-/** The top Tree data structure class abstraction */
+/**
+ * The top Tree data structure class abstraction.
+ * Represents a tree with a single root node and provides methods for traversal,
+ * manipulation, and serialization.
+ * @template T The type of value stored in each node
+ */
 export class Tree<T> {
 	constructor(
 		protected _root: TreeNode<T> | null = null,
@@ -11,24 +16,42 @@ export class Tree<T> {
 		}
 	}
 
-	/** Returns boolean whether the tree is marked as readonly */
+	/**
+	 * Returns boolean whether the tree is marked as readonly.
+	 * @returns True if the tree is readonly, false otherwise
+	 */
 	get readonly(): boolean {
 		return this._readonly;
 	}
 
-	/** Sets internal readonly flag */
+	/**
+	 * Sets internal readonly flag (internal use only).
+	 * @param flag Whether to mark the tree as readonly
+	 * @returns This tree instance for chaining
+	 */
 	__setReadonly(flag: boolean = true): Tree<T> {
 		this._readonly = !!flag;
 		if (this._root) this._root.__setReadonly(this._readonly).__syncChildren();
 		return this;
 	}
 
-	/** Creates new Tree from provided input */
+	/**
+	 * Creates new Tree from provided input (factory method).
+	 * @param dump Serialized tree data (string or DTO object)
+	 * @param _readonly Whether to mark the tree as readonly
+	 * @returns New Tree instance
+	 */
 	static factory<T>(dump: string | TreeNodeDTO<T>, _readonly = false): Tree<T> {
 		return new Tree<T>(null, _readonly).restore(dump);
 	}
 
-	/** Appends new node to the tree */
+	/**
+	 * Appends new node to the tree.
+	 * If tree has no root, the new node becomes the root.
+	 * Otherwise, appends to the existing root.
+	 * @param valueOrNode Value or TreeNode instance to append
+	 * @returns The newly appended TreeNode
+	 */
 	appendChild(valueOrNode: T | TreeNode<T>): TreeNode<T> {
 		if (this._root) {
 			return this._root.appendChild(valueOrNode).__setReadonly(this._readonly);
@@ -42,12 +65,20 @@ export class Tree<T> {
 		}
 	}
 
-	/** Gets the root node */
+	/**
+	 * Gets the root node of the tree.
+	 * @returns The root node or null if tree is empty
+	 */
 	get root(): TreeNode<T> | null {
 		return this._root;
 	}
 
-	/** Depth-first, pre-order... https://en.wikipedia.org/wiki/Tree_traversal */
+	/**
+	 * Depth-first, pre-order traversal generator.
+	 * @see https://en.wikipedia.org/wiki/Tree_traversal
+	 * @param node Optional starting node (defaults to root)
+	 * @yields TreeNode instances in pre-order sequence
+	 */
 	*preOrderTraversal(node?: TreeNode<T> | null): Generator<TreeNode<T> | null> {
 		node ??= this._root;
 		yield node;
@@ -58,7 +89,12 @@ export class Tree<T> {
 		}
 	}
 
-	/** Depth-first, post-order... https://en.wikipedia.org/wiki/Tree_traversal */
+	/**
+	 * Depth-first, post-order traversal generator.
+	 * @see https://en.wikipedia.org/wiki/Tree_traversal
+	 * @param node Optional starting node (defaults to root)
+	 * @yields TreeNode instances in post-order sequence
+	 */
 	*postOrderTraversal(
 		node?: TreeNode<T> | null
 	): Generator<TreeNode<T> | null> {
@@ -71,7 +107,11 @@ export class Tree<T> {
 		yield node;
 	}
 
-	/** Breadth-first, level-order traversal */
+	/**
+	 * Breadth-first, level-order traversal generator.
+	 * @param node Optional starting node (defaults to root)
+	 * @yields TreeNode instances in level-order sequence
+	 */
 	*levelOrderTraversal(
 		node?: TreeNode<T> | null
 	): Generator<TreeNode<T> | null> {
@@ -89,16 +129,28 @@ export class Tree<T> {
 		}
 	}
 
-	/** Searches nodes by given id */
+	/**
+	 * Searches for a node by its unique id.
+	 * @param id The node id to search for
+	 * @returns The matching TreeNode or null if not found
+	 * @throws Error if id is empty
+	 */
 	find(id: string): TreeNode<T> | null {
-		if (!id) new Error(`Missing id`);
+		if (!id) throw new Error(`Missing id`);
 		for (const node of this.preOrderTraversal()) {
 			if (node?.id === id) return node;
 		}
 		return null;
 	}
 
-	/** Searches all nodes (including root) by given value or prop+value pair */
+	/**
+	 * Searches all nodes (including root) by given value or property+value pair.
+	 * @param valueOrPropValue The value to search for, or property value if propName is specified
+	 * @param propName Optional property name to search within node values (for object values)
+	 * @param maxDepth Maximum depth to search (0 = unlimited)
+	 * @param valueCompareEqualFn Optional custom comparison function
+	 * @returns Array of matching TreeNode instances
+	 */
 	findAllBy(
 		valueOrPropValue: any,
 		propName: string | null = null,
@@ -115,10 +167,16 @@ export class Tree<T> {
 		);
 	}
 
-	/** Searches for lowest common ancestor of the two nodes */
+	/**
+	 * Searches for the lowest common ancestor (LCA) of two nodes.
+	 * @param node1Id The id of the first node
+	 * @param node2Id The id of the second node
+	 * @returns The lowest common ancestor TreeNode, or null if not found
+	 * @throws Error if either id is missing or nodes are not found
+	 */
 	findLCA(node1Id: string, node2Id: string): TreeNode<T> | null {
 		// some empty arg? -> no lca
-		if (!node1Id || !node1Id) new Error(`Missing id`);
+		if (!node1Id || !node2Id) throw new Error(`Missing id`);
 
 		// find starting bottom nodes
 		const n1 = this.find(node1Id);
@@ -148,7 +206,13 @@ export class Tree<T> {
 		return lca;
 	}
 
-	/** Inserts new node under given node id */
+	/**
+	 * Inserts new node under the specified parent node.
+	 * @param parentNodeId The id of the parent node
+	 * @param value The value for the new node
+	 * @returns The newly created TreeNode
+	 * @throws Error if parent node is not found
+	 */
 	insert(parentNodeId: string, value: T): TreeNode<T> {
 		const node = this.find(parentNodeId);
 		if (node) {
@@ -157,9 +221,14 @@ export class Tree<T> {
 		throw new Error(`Node "${parentNodeId}" not found`);
 	}
 
-	/** Removes node by id */
+	/**
+	 * Removes a node and its entire subtree by id.
+	 * @param id The id of the node to remove
+	 * @returns This tree instance for chaining
+	 * @throws Error if id is empty or node is not found
+	 */
 	remove(id: string): Tree<T> {
-		if (!id) new Error(`Missing id`);
+		if (!id) throw new Error(`Missing id`);
 
 		if (this._root?.id === id) {
 			this._root = null;
@@ -210,27 +279,49 @@ export class Tree<T> {
 		}
 	}
 
-	/** Moves node */
+	/**
+	 * Moves a node (with its subtree) to become a child of the target node.
+	 * @param srcNodeId The id of the node to move
+	 * @param targetNodeId The id of the destination parent node
+	 * @returns The moved TreeNode in its new location
+	 * @throws Error if nodes not found, recursive reference detected, or moving to self
+	 */
 	move(srcNodeId: string, targetNodeId: string): TreeNode<T> {
 		return this._moveOrCopy(srcNodeId, targetNodeId, true);
 	}
 
-	/** Copies node */
+	/**
+	 * Copies a node (with its subtree) to become a child of the target node.
+	 * @param srcNodeId The id of the node to copy
+	 * @param targetNodeId The id of the destination parent node
+	 * @returns The newly copied TreeNode
+	 * @throws Error if nodes are not found
+	 */
 	copy(srcNodeId: string, targetNodeId: string): TreeNode<T> {
 		return this._moveOrCopy(srcNodeId, targetNodeId, false);
 	}
 
-	/** Returns internal data structure */
+	/**
+	 * Returns the internal data structure representation.
+	 * @returns TreeNodeDTO object or undefined if tree is empty
+	 */
 	toJSON(): TreeNodeDTO<T> | undefined {
 		return this._root?.toJSON();
 	}
 
-	/** Returns internal data structure as string */
+	/**
+	 * Serializes the tree to a JSON string.
+	 * @returns JSON string representation of the tree
+	 */
 	dump(): string {
 		return JSON.stringify(this);
 	}
 
-	/** Restores internal state from given input */
+	/**
+	 * Restores tree state from serialized data.
+	 * @param dump Serialized tree data (JSON string or DTO object)
+	 * @returns This tree instance for chaining
+	 */
 	restore(dump: string | TreeNodeDTO<T>): Tree<T> {
 		let parsed: TreeNodeDTO<T> = dump as any;
 		if (typeof dump === "string") parsed = JSON.parse(dump);
@@ -262,7 +353,11 @@ export class Tree<T> {
 		return this;
 	}
 
-	/** Returns total number of nodes in the tree */
+	/**
+	 * Returns the total number of nodes in the tree or subtree.
+	 * @param from Optional starting node (defaults to root for entire tree)
+	 * @returns Number of nodes
+	 */
 	size(from?: TreeNode<T> | null): number {
 		from ??= this._root;
 		if (!from) return 0;
@@ -280,16 +375,31 @@ export class Tree<T> {
 		return len;
 	}
 
-	/** Returns boolean wheather the id exists in the tree */
+	/**
+	 * Checks if a node with the given id exists in the tree.
+	 * @param id The node id to check
+	 * @param maxDepth Maximum depth to search (0 = unlimited)
+	 * @returns True if node exists, false otherwise
+	 */
 	contains(id: string, maxDepth = 0): boolean {
 		return !!this._root?.contains(id, maxDepth);
 	}
 
+	/**
+	 * Checks if a node with the given value exists in the tree.
+	 * @param value The value to search for
+	 * @param maxDepth Maximum depth to search (0 = unlimited)
+	 * @param compareFn Optional custom comparison function
+	 * @returns True if value exists, false otherwise
+	 */
 	has(value: T, maxDepth = 0, compareFn?: (a: T, b: T) => boolean): boolean {
 		return !!this._root?.has(value, maxDepth, compareFn);
 	}
 
-	/** Returns textual representation of the tree (for debugging purposes) */
+	/**
+	 * Returns string representation of the tree (for debugging purposes).
+	 * @returns Multi-line string showing tree structure with indentation
+	 */
 	toString(): string {
 		return [...this.preOrderTraversal()].map((n) => n?.toString()).join("\n");
 	}
