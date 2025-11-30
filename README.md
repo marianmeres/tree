@@ -139,3 +139,10 @@ assert(t.readonly);
 assertThrows(() => t.appendChild('foo'));
 // ...
 ```
+
+## Package Identity
+
+- **Name:** @marianmeres/tree
+- **Author:** Marian Meres
+- **Repository:** https://github.com/marianmeres/tree
+- **License:** MIT
