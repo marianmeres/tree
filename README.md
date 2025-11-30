@@ -1,5 +1,8 @@
 # @marianmeres/tree
 
+[![NPM version](https://img.shields.io/npm/v/@marianmeres/tree)](https://www.npmjs.com/package/@marianmeres/tree)
+[![JSR version](https://jsr.io/badges/@marianmeres/tree)](https://jsr.io/@marianmeres/tree)
+
 Base [tree](<https://en.wikipedia.org/wiki/Tree_(data_structure)>) class providing
 common traversal, lookup and node manipulation operations.
 
