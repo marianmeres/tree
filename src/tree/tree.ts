@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Tree class representing the top-level tree data structure container.
+ * Provides traversal methods (pre-order, post-order, level-order), node lookup and search,
+ * subtree manipulation (move, copy, remove), and serialization/deserialization support.
+ */
 import { TreeNode, type TreeNodeDTO } from "./tree-node.ts";
 
 /**
@@ -7,6 +13,11 @@ import { TreeNode, type TreeNodeDTO } from "./tree-node.ts";
  * @template T The type of value stored in each node
  */
 export class Tree<T> {
+	/**
+	 * Creates a new Tree instance.
+	 * @param _root Optional root node to initialize the tree with
+	 * @param _readonly Whether to mark the tree as readonly (prevents all mutations)
+	 */
 	constructor(
 		protected _root: TreeNode<T> | null = null,
 		protected _readonly = false

@@ -1,11 +1,21 @@
+/**
+ * @module
+ * TreeNode class representing individual nodes in a tree structure.
+ * Each node has a unique ID, a value of type T, parent/child references, and various
+ * utility methods for navigation, lookup, and manipulation.
+ */
 import type { Tree } from "./tree.ts";
 
 /**
  * Tree node data transfer object for serialization.
+ * @template T The type of value stored in the node
  */
 export interface TreeNodeDTO<T> {
+	/** Unique identifier of the node */
 	id: string;
+	/** The value stored in the node */
 	value: T;
+	/** Array of child node DTOs */
 	children: TreeNodeDTO<T>[];
 }
 
@@ -31,6 +41,12 @@ export class TreeNode<T> {
 		);
 	}
 
+	/**
+	 * Creates a new TreeNode instance.
+	 * @param value The value to store in this node
+	 * @param _parent Optional parent node reference (null for root nodes)
+	 * @param tree Optional reference to the owning Tree instance
+	 */
 	constructor(
 		public value: T,
 		protected _parent: TreeNode<T> | null = null,

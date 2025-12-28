@@ -2,9 +2,12 @@
 
 [![NPM version](https://img.shields.io/npm/v/@marianmeres/tree)](https://www.npmjs.com/package/@marianmeres/tree)
 [![JSR version](https://jsr.io/badges/@marianmeres/tree)](https://jsr.io/@marianmeres/tree)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Base [tree](<https://en.wikipedia.org/wiki/Tree_(data_structure)>) class providing
 common traversal, lookup and node manipulation operations.
+
+For complete API documentation, see [API.md](./API.md).
 
 ## Install
 ```sh
@@ -142,10 +145,3 @@ assert(t.readonly);
 assertThrows(() => t.appendChild('foo'));
 // ...
 ```
-
-## Package Identity
-
-- **Name:** @marianmeres/tree
-- **Author:** Marian Meres
-- **Repository:** https://github.com/marianmeres/tree
-- **License:** MIT
