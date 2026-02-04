@@ -5,7 +5,7 @@ Machine-readable context for AI agents working with `@marianmeres/tree`.
 ## Package Identity
 
 - **name**: @marianmeres/tree
-- **version**: 2.2.2
+- **version**: 2.2.3
 - **license**: MIT
 - **repository**: https://github.com/marianmeres/tree
 - **runtime**: Deno-native, also published to npm
