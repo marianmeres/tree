@@ -402,9 +402,9 @@ const node = new TreeNode<string>("value");
 ```typescript
 static createId(): string
 ```
-Generates a random 8-character ID prefixed with "n" (safe for HTML element IDs).
+Generates a random ID prefixed with "n" (safe for HTML element IDs).
 
-**Returns:** A random ID string (e.g., `"n1a2b3c4d5"`).
+**Returns:** A random ID string (e.g., `"nk7x2m4p9qw1j3f5t8v6a"`).
 
 ### Child Management
 

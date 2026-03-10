@@ -5,7 +5,7 @@ Machine-readable context for AI agents working with `@marianmeres/tree`.
 ## Package Identity
 
 - **name**: @marianmeres/tree
-- **version**: 2.2.3
+- **version**: 2.2.4
 - **license**: MIT
 - **repository**: https://github.com/marianmeres/tree
 - **runtime**: Deno-native, also published to npm
@@ -92,7 +92,7 @@ export { TreeNode, type TreeNodeDTO } from "./tree/tree-node.ts";
 - `TreeNode.createId(): string`
 
 **Properties**:
-- `id: string` (auto-generated, prefixed with 'n')
+- `id: string` (auto-generated, 'n' prefix)
 - `value: T`
 - `parent: TreeNode<T> | null`
 - `children: TreeNode<T>[]`
@@ -141,7 +141,7 @@ interface TreeNodeDTO<T> {
 ## Key Behaviors
 
 1. **Single Root**: Tree has exactly one root node (first `appendChild` creates it)
-2. **Unique IDs**: All nodes have auto-generated unique IDs (8 chars, 'n' prefix)
+2. **Unique IDs**: All nodes have auto-generated unique IDs ('n' prefix)
 3. **Readonly Mode**: When enabled, all mutations throw errors
 4. **Recursive Reference Detection**: `move()` prevents moving node to its own descendant
 5. **Serialization**: Full round-trip via `dump()`/`restore()` or `Tree.factory()`
