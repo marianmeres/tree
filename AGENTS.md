@@ -5,7 +5,7 @@ Machine-readable context for AI agents working with `@marianmeres/tree`.
 ## Package Identity
 
 - **name**: @marianmeres/tree
-- **version**: 2.2.4
+- **version**: 2.3.0 (pending release)
 - **license**: MIT
 - **repository**: https://github.com/marianmeres/tree
 - **runtime**: Deno-native, also published to npm
@@ -95,7 +95,7 @@ export { TreeNode, type TreeNodeDTO } from "./tree/tree-node.ts";
 - `id: string` (auto-generated, 'n' prefix)
 - `value: T`
 - `parent: TreeNode<T> | null`
-- `children: TreeNode<T>[]`
+- `children: TreeNode<T>[]` (frozen when readonly)
 - `tree: Tree<T> | null`
 - `readonly: boolean`
 - `depth: number`
@@ -103,13 +103,13 @@ export { TreeNode, type TreeNodeDTO } from "./tree/tree-node.ts";
 - `isRoot: boolean`
 - `siblings: TreeNode<T>[]`
 - `siblingIndex: number`
-- `root: TreeNode<T> | null`
+- `root: TreeNode<T>` (returns self for root/detached — non-nullable)
 - `path: TreeNode<T>[]`
 
 **Child Management**:
 - `appendChild(valueOrNode: T | TreeNode<T>): TreeNode<T>`
 - `removeChild(id: string): TreeNode<T>`
-- `replaceChild(id: string, valueOrNode: T | TreeNode<T>): TreeNode<T> | false`
+- `replaceChild(id: string, valueOrNode: T | TreeNode<T>): TreeNode<T>`
 - `resetChildren(valuesOrNodes?: (T | TreeNode<T>)[]): TreeNode<T>`
 
 **Sibling Operations**:
@@ -141,11 +141,24 @@ interface TreeNodeDTO<T> {
 ## Key Behaviors
 
 1. **Single Root**: Tree has exactly one root node (first `appendChild` creates it)
-2. **Unique IDs**: All nodes have auto-generated unique IDs ('n' prefix)
-3. **Readonly Mode**: When enabled, all mutations throw errors
-4. **Recursive Reference Detection**: `move()` prevents moving node to its own descendant
-5. **Serialization**: Full round-trip via `dump()`/`restore()` or `Tree.factory()`
-6. **Generator Traversals**: Memory-efficient traversal using generators
+2. **Unique IDs**: All nodes have auto-generated unique IDs ('n' prefix; uses `crypto.randomUUID()` when available)
+3. **Readonly Mode**: When enabled:
+   - All mutations throw errors (including `appendChild` on an empty tree, and removing the root)
+   - Each node's `children` array is frozen — direct mutation throws
+4. **Adoption Safety**: `appendChild`/`replaceChild` reject:
+   - self-append, already-descendant (duplicate), ancestor-append (cycle),
+   - nodes with a different parent (detach first), nodes from a different tree
+5. **Full Detachment on Removal**: Removed subtrees have their `parent` and `tree`
+   references cleared so stale navigation (`.root`, `.path`, `.depth`) cannot return
+   misleading values
+6. **Recursive Reference Detection**: `move()` prevents moving a node to its own descendant
+7. **LCA Ancestor-Descendant**: `findLCA(a, b)` correctly returns the ancestor node
+   when one id is an ancestor of the other
+8. **Serialization**: Full round-trip via `dump()`/`restore()` or `Tree.factory()`;
+   `toJSON()` returns plain DTOs (no live `TreeNode` references)
+9. **Generator Traversals**: Memory-efficient — yield `TreeNode<T>` (no nulls);
+   yield nothing for empty trees
+10. **Bulk-Append Performance**: O(n) for flat appends (does not re-sync siblings)
 
 ## Common Patterns
 
@@ -194,7 +207,7 @@ deno task publish      # Publish to JSR and npm
 
 ## Test Coverage
 
-26 tests covering:
+42 tests covering:
 - Node/tree sanity checks
 - All traversal methods
 - Serialization round-trips
@@ -204,6 +217,25 @@ deno task publish      # Publish to JSR and npm
 - Move operations (including edge cases)
 - Copy operations
 - Sibling operations
-- LCA finding
-- Size calculation
-- Readonly mode
+- LCA finding (including ancestor-descendant case)
+- Size calculation (including foreign-node guard)
+- Readonly mode (incl. empty-tree append, root removal, frozen children array)
+- Adoption safety (cycles, duplicates, cross-tree, pre-parented nodes)
+- Detachment on remove / deepClone
+- DTO contract (toJSON)
+- Bulk-append performance (O(n))
+
+## Breaking Changes Summary (2.3.0)
+
+Full table in [API.md](./API.md#breaking--behavioral-changes). Most userland code
+is unaffected. Most likely to need updates:
+
+- `TreeNode.root` is now non-nullable (returns self for root/detached nodes)
+- Traversals no longer yield `null` for empty trees (yield nothing)
+- `TreeNode.toJSON()` children are plain DTOs, not live `TreeNode` instances
+- `replaceChild()` throws instead of returning `false` on failure
+- `appendChild()` throws on unsafe adoptions (duplicates, cycles, cross-tree,
+  pre-parented nodes) — previously some cases silently corrupted state
+- Readonly mode now actually prevents: empty-tree append, root removal, and
+  direct `children.push` / `children.splice`
+- `size(foreignNode)` returns `0` (was: subtree size if the foreign node had children)

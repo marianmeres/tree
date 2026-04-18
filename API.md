@@ -2,6 +2,10 @@
 
 Complete API documentation for `@marianmeres/tree`.
 
+> **Changed in 2.3.0** — This release fixes several latent bugs. Most changes are
+> purely corrective, but a few have behavioral implications. See
+> [Breaking & Behavioral Changes](#breaking--behavioral-changes) at the bottom.
+
 ## Table of Contents
 
 - [Tree Class](#tree-class)
@@ -91,14 +95,15 @@ All traversal methods are generator functions that yield nodes in a specific ord
 
 #### `preOrderTraversal()`
 ```typescript
-*preOrderTraversal(node?: TreeNode<T> | null): Generator<TreeNode<T> | null>
+*preOrderTraversal(node?: TreeNode<T> | null): Generator<TreeNode<T>>
 ```
 Depth-first, pre-order traversal (visits node, then children left-to-right).
+Yields nothing if the tree is empty (or `node` is null).
 
 **Example:**
 ```typescript
 for (const node of tree.preOrderTraversal()) {
-  console.log(node?.value);
+  console.log(node.value);
 }
 // Or collect to array:
 const nodes = [...tree.preOrderTraversal()];
@@ -106,15 +111,17 @@ const nodes = [...tree.preOrderTraversal()];
 
 #### `postOrderTraversal()`
 ```typescript
-*postOrderTraversal(node?: TreeNode<T> | null): Generator<TreeNode<T> | null>
+*postOrderTraversal(node?: TreeNode<T> | null): Generator<TreeNode<T>>
 ```
 Depth-first, post-order traversal (visits children left-to-right, then node).
+Yields nothing if the tree is empty.
 
 #### `levelOrderTraversal()`
 ```typescript
-*levelOrderTraversal(node?: TreeNode<T> | null): Generator<TreeNode<T> | null>
+*levelOrderTraversal(node?: TreeNode<T> | null): Generator<TreeNode<T>>
 ```
 Breadth-first, level-order traversal (visits nodes level by level, left-to-right).
+Yields nothing if the tree is empty.
 
 ### Search Methods
 
@@ -173,7 +180,7 @@ Finds the lowest common ancestor (LCA) of two nodes.
 | `node1Id`  | `string` | ID of the first node       |
 | `node2Id`  | `string` | ID of the second node      |
 
-**Returns:** The LCA node or `null`.
+**Returns:** The LCA node or `null` if the tree is empty.
 
 **Throws:** Error if either ID is empty or nodes are not found.
 
@@ -181,6 +188,10 @@ Finds the lowest common ancestor (LCA) of two nodes.
 ```typescript
 const ancestor = tree.findLCA(nodeA.id, nodeB.id);
 ```
+
+**Notes:**
+- Handles the ancestor-descendant case correctly: if `nodeB` is an ancestor of `nodeA`, returns `nodeB`.
+- Returns the same node if both ids refer to the same node.
 
 #### `contains()`
 ```typescript
@@ -220,6 +231,10 @@ Otherwise, appends to the existing root.
 
 **Returns:** The newly appended TreeNode.
 
+**Throws:** Error if the tree is readonly, or if a passed `TreeNode` instance cannot
+be safely adopted as the new root (e.g., it already has a parent or belongs to a
+different tree).
+
 **Example:**
 ```typescript
 const root = tree.appendChild("root");
@@ -253,7 +268,11 @@ Removes a node and its entire subtree by ID.
 
 **Returns:** This tree instance for chaining.
 
-**Throws:** Error if ID is empty or node is not found.
+**Throws:** Error if the tree is readonly, ID is empty, or node is not found.
+
+**Notes:** The removed subtree is fully detached — `parent` and `tree` references on
+all removed nodes are cleared, so stale navigation (`.root`, `.path`, `.depth`) cannot
+return misleading values.
 
 #### `move()`
 ```typescript
@@ -324,7 +343,8 @@ Returns the internal data structure representation for JSON serialization.
 ```typescript
 size(from?: TreeNode<T> | null): number
 ```
-Returns the total number of nodes in the tree or subtree.
+Returns the total number of nodes in the tree or subtree. Returns `0` if `from`
+is provided but does not belong to this tree.
 
 | Parameter | Type                    | Default  | Description                              |
 | --------- | ----------------------- | -------- | ---------------------------------------- |
@@ -384,16 +404,16 @@ const node = new TreeNode<string>("value");
 | -------------- | --------------------- | ----------------------------------------------------- |
 | `id`           | `string`              | Unique identifier (auto-generated)                    |
 | `value`        | `T`                   | The stored value                                      |
-| `parent`       | `TreeNode<T> \| null` | Parent node reference                                 |
-| `children`     | `TreeNode<T>[]`       | Array of direct child nodes                           |
+| `parent`       | `TreeNode<T> \| null` | Parent node reference (`null` if root or detached)    |
+| `children`     | `TreeNode<T>[]`       | Array of direct child nodes (frozen when readonly)    |
 | `tree`         | `Tree<T> \| null`     | Reference to the owning Tree instance                 |
 | `readonly`     | `boolean`             | Whether the node is readonly                          |
 | `depth`        | `number`              | Node depth (root = 0)                                 |
 | `isLeaf`       | `boolean`             | `true` if the node has no children                    |
 | `isRoot`       | `boolean`             | `true` if the node has no parent                      |
-| `siblings`     | `TreeNode<T>[]`       | Array of sibling nodes (includes self)                |
-| `siblingIndex` | `number`              | Index within siblings array (-1 if no siblings)       |
-| `root`         | `TreeNode<T> \| null` | Root ancestor node                                    |
+| `siblings`     | `TreeNode<T>[]`       | Array of sibling nodes (includes self, `[]` if no parent) |
+| `siblingIndex` | `number`              | Index within siblings array (-1 if no parent)         |
+| `root`         | `TreeNode<T>`         | Topmost ancestor (returns self if root or detached)   |
 | `path`         | `TreeNode<T>[]`       | Ancestors from root to parent (top-down, self excluded) |
 
 ### TreeNode Static Methods
@@ -421,7 +441,13 @@ Appends a new child node.
 
 **Returns:** The newly appended TreeNode.
 
-**Throws:** Error if node is readonly.
+**Throws:** Error if node is readonly, or if the argument is a `TreeNode` instance that
+cannot be safely adopted — specifically:
+- self-append
+- already a descendant (duplicate)
+- is an ancestor of this node (would create a cycle)
+- already has a different parent (detach via `parent.removeChild` or `tree.remove`/`tree.move` first)
+- belongs to a different tree
 
 #### `removeChild()`
 ```typescript
@@ -437,20 +463,24 @@ Removes a child node by its ID.
 
 **Throws:** Error if node is readonly or child not found.
 
+**Notes:** The removed child (and its entire subtree) is fully detached — `parent`
+and `tree` references are cleared.
+
 #### `replaceChild()`
 ```typescript
-replaceChild(id: string, valueOrNode: T | TreeNode<T>): TreeNode<T> | false
+replaceChild(id: string, valueOrNode: T | TreeNode<T>): TreeNode<T>
 ```
-Replaces a child node with a new node.
+Replaces a child node with a new node. The old child becomes fully detached.
 
 | Parameter      | Type                | Description                      |
 | -------------- | ------------------- | -------------------------------- |
 | `id`           | `string`            | ID of the child to replace       |
 | `valueOrNode`  | `T \| TreeNode<T>`  | Value or TreeNode to replace with |
 
-**Returns:** The new TreeNode, or `false` on failure.
+**Returns:** The new TreeNode (same adoptability rules as `appendChild`).
 
-**Throws:** Error if node is readonly or child not found.
+**Throws:** Error if node is readonly, child not found, or the replacement cannot
+be safely adopted (see `appendChild`).
 
 #### `resetChildren()`
 ```typescript
@@ -550,7 +580,9 @@ Searches all nodes (self + descendants) by value or property+value pair.
 ```typescript
 toJSON(): TreeNodeDTO<T>
 ```
-Returns the data representation of the node for serialization.
+Returns the plain data representation of the node for serialization. Children are
+recursively converted to DTOs — the returned object contains no live `TreeNode`
+references, so mutating it will not affect the underlying tree.
 
 **Returns:** TreeNodeDTO object with `id`, `value`, and `children`.
 
@@ -561,7 +593,7 @@ deepClone(): TreeNode<T>
 Creates a deep clone of this node and its entire subtree.
 All nodes in the clone will have new unique IDs.
 
-**Returns:** A new TreeNode instance that is a deep copy.
+**Returns:** A new, fully detached TreeNode instance (`parent` is `null`, `tree` is `null`).
 
 #### `toString()`
 ```typescript
@@ -587,3 +619,51 @@ interface TreeNodeDTO<T> {
 ```
 
 Used by `dump()`/`restore()` for serialization and `Tree.factory()` for tree creation.
+
+---
+
+## Readonly Mode Semantics
+
+Construct a tree in readonly mode with either the constructor flag or the factory:
+
+```typescript
+const t = new Tree<string>(rootNode, true);
+const t2 = Tree.factory<string>(dump, true);
+```
+
+When readonly is active:
+- All mutation methods throw (`appendChild`, `insert`, `remove`, `move`, `copy`,
+  `TreeNode.appendChild`/`removeChild`/`replaceChild`/`resetChildren`/`moveSiblingIndex`).
+- **Including on empty trees** — `new Tree(null, true).appendChild("x")` throws.
+- **Including the root** — `tree.remove(tree.root.id)` throws.
+- Each node's `children` array is frozen, so direct mutation like
+  `node.children.push(...)` or `node.children.splice(...)` throws a `TypeError`.
+
+---
+
+## Breaking & Behavioral Changes
+
+### 2.3.0
+
+| Area | Before | After |
+|------|--------|-------|
+| `TreeNode.root` | `TreeNode<T> \| null` — returned `null` for root/detached | `TreeNode<T>` — returns `this` for root/detached |
+| Traversal generators | `Generator<TreeNode<T> \| null>` — yielded a single `null` for empty trees | `Generator<TreeNode<T>>` — yields nothing for empty trees |
+| `TreeNode.toJSON()` | `children` array held live `TreeNode` references | `children` array is a plain DTO array (recursive) |
+| `replaceChild()` | `TreeNode<T> \| false` | `TreeNode<T>` (throws on failure instead of returning `false`) |
+| `TreeNode.appendChild()` | Could silently duplicate an already-attached child, cross-tree node, or create cycles | Throws with a descriptive message (see method docs) |
+| `TreeNode.removeChild()` / `Tree.remove()` | Removed nodes kept stale `parent` and `tree` refs | Removed subtree is fully detached (`parent`/`tree` cleared) |
+| `deepClone()` | Clone's `parent` pointed at the original's parent | Clone is fully detached (`parent = null`, `tree = null`) |
+| Readonly + empty tree | `appendChild` silently created the root | Throws |
+| Readonly + root remove | `tree.remove(root.id)` silently cleared the root | Throws |
+| Readonly + `node.children.push(...)` | Silently mutated the tree | `TypeError` (array is frozen) |
+| `size(foreignNode)` | Returned subtree size if foreign node had children | Returns `0` |
+| `findLCA(ancestor, descendant)` | Returned root instead of the true LCA | Returns the ancestor node |
+| `TreeNode.findAllBy()` self-match | Ignored the custom comparator for the self check | Applies the comparator to the self check too |
+| `TreeNode.createId()` | `Math.random()`-based | `crypto.randomUUID()` when available, same fallback otherwise |
+
+Most callers will be unaffected. The ones most likely to need code changes:
+- Code that relied on `node.root === null` to detect detached nodes — use `node.isRoot` or `node.parent === null` instead.
+- Code that collected traversal output as `[...tree.preOrderTraversal()]` and expected `.length === 1` for empty trees — it is now `0`.
+- Code that pattern-matched on `replaceChild(...) === false` — wrap in `try/catch` instead.
+- Code that read `node.children` from a readonly tree and mutated it — this was always a bug; it now throws.

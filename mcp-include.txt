@@ -1,1 +1,3 @@
-Generic tree data structure with hierarchical node management, multiple traversal strategies (pre/post/level-order), node search, subtree manipulation (move, copy, remove), and serialization. Zero dependencies.
+Generic tree data structure with hierarchical node management, multiple traversal 
+strategies (pre/post/level-order), node search, subtree manipulation (move, copy, remove), 
+and serialization. Zero dependencies.

@@ -15,7 +15,7 @@
  * root.appendChild("child2");
  *
  * for (const node of tree.preOrderTraversal()) {
- *   console.log(node?.value);
+ *   console.log(node.value);
  * }
  * ```
  */

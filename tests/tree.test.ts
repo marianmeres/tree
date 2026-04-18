@@ -659,3 +659,184 @@ A
 
 	// and more...
 });
+
+// --- regression tests for bug fixes (v2.3.0) ---
+
+Deno.test("findLCA: ancestor-descendant returns the ancestor", () => {
+	let { tree: t, a, b, f } = _createTree();
+	// B is an ancestor of A; LCA should be B (not root F).
+	assertEquals(t.findLCA(a.id, b.id), b);
+	assertEquals(t.findLCA(b.id, a.id), b);
+	// Root is an ancestor of any node; LCA(root, any) === root.
+	assertEquals(t.findLCA(f.id, a.id), f);
+});
+
+Deno.test("TreeNode.root returns self for root / detached nodes", () => {
+	const lonely = new TreeNode("x");
+	assertEquals(lonely.root, lonely);
+
+	const t = new Tree<string>();
+	const r = t.appendChild("R");
+	assertEquals(r.root, r);
+});
+
+Deno.test("appendChild rejects duplicate descendants and ancestors", () => {
+	const t = new Tree<string>();
+	const root = t.appendChild("R");
+	const child = root.appendChild("C");
+	const grand = child.appendChild("G");
+
+	// Appending an already-attached node (direct child) → duplicate.
+	assertThrows(() => root.appendChild(child));
+	// Appending a deeper descendant → duplicate.
+	assertThrows(() => root.appendChild(grand));
+	// Appending an ancestor → cycle.
+	assertThrows(() => child.appendChild(root));
+	// Appending self.
+	assertThrows(() => child.appendChild(child));
+});
+
+Deno.test("appendChild of detached TreeNode is allowed", () => {
+	const t = new Tree<string>();
+	const root = t.appendChild("R");
+	const c = root.appendChild("C");
+
+	const detached = new TreeNode("D");
+	// fresh detached node can be appended anywhere
+	c.appendChild(detached);
+	assertEquals(c.children.length, 1);
+	assertEquals(detached.parent, c);
+	assertEquals(detached.tree, t);
+});
+
+Deno.test("appendChild rejects nodes from a different tree", () => {
+	const tA = new Tree<string>();
+	tA.appendChild("A");
+	const tB = new Tree<string>();
+	const rB = tB.appendChild("B");
+	const bChild = rB.appendChild("B1");
+
+	assertThrows(() => tA.root!.appendChild(bChild));
+	// tB is untouched
+	assertEquals(tB.root!.children.length, 1);
+	assertEquals(tB.root!.children[0], bChild);
+});
+
+Deno.test("removed node is fully detached (parent, tree cleared)", () => {
+	const t = new Tree<string>();
+	const r = t.appendChild("R");
+	const c = r.appendChild("C");
+	const g = c.appendChild("G");
+
+	t.remove(c.id);
+	assertEquals(c.parent, null);
+	assertEquals(c.tree, null);
+	// subtree is also detached
+	assertEquals(g.tree, null);
+});
+
+Deno.test("TreeNode.toJSON returns plain DTO (no TreeNode instances)", () => {
+	const t = new Tree<string>();
+	const r = t.appendChild("R");
+	r.appendChild("C1").appendChild("G1");
+	r.appendChild("C2");
+
+	const dto = t.root!.toJSON();
+	assert(!(dto.children[0] instanceof TreeNode));
+	assert(!(dto.children[0].children[0] instanceof TreeNode));
+	// Mutating the DTO must NOT affect the live tree.
+	dto.children.push({ id: "fake", value: "fake", children: [] });
+	assertEquals(t.root!.children.length, 2);
+});
+
+Deno.test("deepClone returns a fully detached node", () => {
+	const t = new Tree<string>();
+	const r = t.appendChild("R");
+	const c = r.appendChild("C");
+	c.appendChild("G");
+
+	const clone = c.deepClone();
+	assertEquals(clone.parent, null);
+	assertEquals(clone.tree, null);
+	// But subtree is internally wired.
+	assertEquals(clone.children[0].parent, clone);
+	// Ids are fresh.
+	assert(clone.id !== c.id);
+	assert(clone.children[0].id !== c.children[0].id);
+});
+
+Deno.test("findAllBy uses custom comparator for self-match too", () => {
+	const r = new TreeNode({ name: "Root" });
+	r.appendChild({ name: "Child" });
+	const ci = (a: any, b: any) => a.name.toLowerCase() === b.name.toLowerCase();
+	const hits = r.findAllBy({ name: "root" }, null, 0, ci);
+	assertEquals(hits.length, 1);
+	assertEquals(hits[0], r);
+});
+
+Deno.test("readonly: appendChild blocked on empty tree", () => {
+	const t = new Tree<string>(null, true);
+	assertThrows(() => t.appendChild("x"));
+});
+
+Deno.test("readonly: root removal is blocked", () => {
+	const t = new Tree<string>();
+	t.appendChild("R");
+	const frozen = Tree.factory<string>(t.dump(), true);
+	assertThrows(() => frozen.remove(frozen.root!.id));
+	assert(frozen.root); // still there
+});
+
+Deno.test("readonly: direct children array mutation throws (array is frozen)", () => {
+	const t = new Tree<string>();
+	t.appendChild("R").appendChild("C");
+	const frozen = Tree.factory<string>(t.dump(), true);
+	// children array is frozen; push/splice must throw (or be silently ignored in sloppy mode).
+	assertThrows(() => frozen.root!.children.push(new TreeNode("x")));
+	assertThrows(() =>
+		(frozen.root!.children as TreeNode<string>[]).splice(0, 1)
+	);
+	assertEquals(frozen.root!.children.length, 1);
+});
+
+Deno.test("size(): foreign subtree returns 0 even when it has children", () => {
+	const t = new Tree<string>();
+	t.appendChild("R");
+	const foreign = new TreeNode("X");
+	foreign.appendChild("Y");
+	foreign.appendChild("Z");
+	assertEquals(t.size(foreign), 0);
+});
+
+Deno.test("traversal: empty tree yields nothing (no null)", () => {
+	const t = new Tree<string>();
+	assertEquals([...t.preOrderTraversal()].length, 0);
+	assertEquals([...t.postOrderTraversal()].length, 0);
+	assertEquals([...t.levelOrderTraversal()].length, 0);
+});
+
+Deno.test("bulk flat append is not O(n^2)", () => {
+	const N = 5000;
+	const start = performance.now();
+	const t = new Tree<number>();
+	const r = t.appendChild(0);
+	for (let k = 1; k < N; k++) r.appendChild(k);
+	const ms = performance.now() - start;
+	// On a typical machine this is ~5ms. A generous 500ms upper bound catches
+	// accidental regressions to the old O(n^2) behavior (which was ~120ms at N=5000
+	// and would be multiple seconds at N=20000).
+	assert(ms < 500, `flat append too slow: ${ms}ms`);
+	assertEquals(t.size(), N);
+});
+
+Deno.test("replaceChild returns the replacement (no longer `false`)", () => {
+	const t = new Tree<string>();
+	const r = t.appendChild("R");
+	const c = r.appendChild("C");
+	const replaced = r.replaceChild(c.id, "NEW");
+	assertEquals(replaced.value, "NEW");
+	assertEquals(replaced.parent, r);
+	// Old child is detached.
+	assertEquals(c.parent, null);
+});
+
